@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - University Library System</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo-badge">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                </div>
+                <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 4px; color: var(--text-main);">University Library</h1>
+                <p style="font-size: 13px; color: var(--text-muted);">Sign in to access your library account</p>
+            </div>
+
+            {{ALERT_BOX}}
+
+            <div class="role-switcher">
+                <button type="button" class="role-btn active" data-role="librarian">Librarian / Staff</button>
+                <button type="button" class="role-btn" data-role="student">Student</button>
+            </div>
+
+            <form action="/login" method="POST">
+                <input type="hidden" name="role" id="login-role-input" value="librarian">
+
+                <div class="form-group">
+                    <label class="form-label" id="login-id-label">Librarian ID or Email</label>
+                    <input type="text" name="identifier" id="login-id-input" class="form-control" 
+                           placeholder="e.g. LIB-001 or librarian@university.edu" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px; padding: 12px;">
+                    Sign In to Portal
+                </button>
+            </form>
+
+            <div style="text-align: center; margin-top: 22px; font-size: 13.5px; color: var(--text-muted);">
+                New student? <a href="/register" style="color: var(--primary); font-weight: 600;">Create an account</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
