@@ -66,21 +66,31 @@ def initialize_database():
         return False
 
 
-def authenticate_user(identifier: str, password: str, role: str):
+def authenticate_user(identifier: str, password: str, role: str = None):
     conn = get_connection()
     try:
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         pwd_hash = hash_password(password)
 
-        query = """
-            SELECT id, user_id_number, full_name, email, role, course_year
-            FROM users 
-            WHERE (user_id_number = %s OR email = %s) 
-              AND role = %s 
-              AND (password = %s OR password = %s)
-            LIMIT 1;
-        """
-        cursor.execute(query, (identifier, identifier, role, pwd_hash, password))
+        if role:
+            query = """
+                SELECT id, user_id_number, full_name, email, role, course_year
+                FROM users 
+                WHERE (user_id_number = %s OR email = %s) 
+                  AND role = %s 
+                  AND (password = %s OR password = %s)
+                LIMIT 1;
+            """
+            cursor.execute(query, (identifier, identifier, role, pwd_hash, password))
+        else:
+            query = """
+                SELECT id, user_id_number, full_name, email, role, course_year
+                FROM users 
+                WHERE (user_id_number = %s OR email = %s) 
+                  AND (password = %s OR password = %s)
+                LIMIT 1;
+            """
+            cursor.execute(query, (identifier, identifier, pwd_hash, password))
         return cursor.fetchone()
     finally:
         conn.close()

@@ -69,32 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const roleBtns = document.querySelectorAll('.role-btn');
-    const roleInput = document.getElementById('login-role-input');
-    const idLabel = document.getElementById('login-id-label');
-    const idInput = document.getElementById('login-id-input');
 
-    if (roleBtns.length && roleInput) {
-        roleBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                roleBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                const role = btn.getAttribute('data-role');
-                roleInput.value = role;
-
-                if (idLabel && idInput) {
-                    if (role === 'librarian') {
-                        idLabel.textContent = 'Librarian ID or Email';
-                        idInput.placeholder = 'example@gmail.com or 202_-1234';
-                    } else {
-                        idLabel.textContent = 'Student ID or Email';
-                        idInput.placeholder = 'student@gmail.com or 202_-1234';
-                    }
-                }
-            });
-        });
-    }
 
     window.openEditBookModal = function(book) {
         document.getElementById('edit-book-id').value = book.id;

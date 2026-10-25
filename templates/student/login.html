@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Login - Tagoloan Community College Library</title>
+    <title>Sign In - Tagoloan Community College Library</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -12,21 +12,16 @@
             <div class="auth-header">
                 <img src="/static/images/logo.jpg" alt="Tagoloan Community College Logo" class="auth-logo-img">
                 <h1 style="font-size: 21px; font-weight: 700; margin-bottom: 4px; color: var(--text-main);">Tagoloan Community College</h1>
-                <p style="font-size: 13.5px; color: var(--text-muted);">Student Library Portal</p>
-                <div style="display: inline-block; margin-top: 10px; padding: 4px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; color: var(--primary);">
-                    Student Access
-                </div>
+                <p style="font-size: 13.5px; color: var(--text-muted);">Library Management System</p>
             </div>
 
             {{ALERT_BOX}}
 
             <form action="/login" method="POST">
-                <input type="hidden" name="role" value="student">
-
                 <div class="form-group">
-                    <label class="form-label">Student ID or Email</label>
+                    <label class="form-label">User ID or Email</label>
                     <input type="text" name="identifier" class="form-control" 
-                           placeholder="student@gmail.com or 202_-1234" required autofocus>
+                           placeholder="example@gmail.com or 202_-1234" required autofocus>
                 </div>
 
                 <div class="form-group">
@@ -35,15 +30,16 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px; padding: 12px;">
-                    Sign In to Student Portal
+                    Sign In to Portal
                 </button>
             </form>
 
-            <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-subtle); text-align: center; font-size: 13.5px; color: var(--text-muted); display: flex; flex-direction: column; gap: 8px;">
-                <span>New student? <a href="/student/register" style="color: var(--primary); font-weight: 600;">Create an account &rarr;</a></span>
-                <span>Are you a librarian? <a href="/librarian/login" style="color: var(--text-main); font-weight: 500;">Staff Portal Login</a></span>
+            <div style="text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-subtle); font-size: 13.5px; color: var(--text-muted);">
+                New student? <a href="/student/register" style="color: var(--primary); font-weight: 600;">Create an account &rarr;</a>
             </div>
         </div>
     </div>
+
+    <script src="/static/js/main.js"></script>
 </body>
 </html>

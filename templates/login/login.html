@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Portal - Tagoloan Community College Library</title>
+    <title>Sign In - Tagoloan Community College Library</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -17,17 +17,10 @@
 
             {{ALERT_BOX}}
 
-            <div class="role-switcher">
-                <button type="button" class="role-btn active" data-role="librarian">Librarian / Staff</button>
-                <button type="button" class="role-btn" data-role="student">Student</button>
-            </div>
-
             <form action="/login" method="POST">
-                <input type="hidden" name="role" id="login-role-input" value="librarian">
-
                 <div class="form-group">
-                    <label class="form-label" id="login-id-label">Librarian ID or Email</label>
-                    <input type="text" name="identifier" id="login-id-input" class="form-control" 
+                    <label class="form-label">User ID or Email</label>
+                    <input type="text" name="identifier" class="form-control" 
                            placeholder="example@gmail.com or 202_-1234" required autofocus>
                 </div>
 
@@ -41,13 +34,8 @@
                 </button>
             </form>
 
-            <div style="text-align: center; margin-top: 22px; font-size: 13.5px; color: var(--text-muted); display: flex; flex-direction: column; gap: 8px;">
-                <div>New student? <a href="/student/register" style="color: var(--primary); font-weight: 600;">Create an account</a></div>
-                <div style="font-size: 12.5px; color: var(--text-dim); display: flex; justify-content: center; gap: 14px; margin-top: 4px;">
-                    <a href="/librarian/login">Staff Dedicated Page</a>
-                    <span>•</span>
-                    <a href="/student/login">Student Dedicated Page</a>
-                </div>
+            <div style="text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-subtle); font-size: 13.5px; color: var(--text-muted);">
+                New student? <a href="/student/register" style="color: var(--primary); font-weight: 600;">Create an account &rarr;</a>
             </div>
         </div>
     </div>

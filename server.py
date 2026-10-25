@@ -153,27 +153,13 @@ class LibraryRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.redirect('/student/dashboard')
             return
 
-        # Dedicated Login & Registration routes
-        if path in ['/login', '/login/portal']:
+        # Unified Login & Registration routes
+        if path in ['/login', '/login/portal', '/librarian/login', '/student/login', '/login/librarian', '/login/student']:
             if user:
                 dest = '/librarian/dashboard' if user['role'] == 'librarian' else '/student/dashboard'
                 self.redirect(dest)
                 return
             self.render_html('login/login.html', {'alert_msg': alert_msg, 'alert_type': alert_type})
-            return
-
-        if path in ['/librarian/login', '/login/librarian']:
-            if user:
-                self.redirect('/librarian/dashboard' if user['role'] == 'librarian' else '/student/dashboard')
-                return
-            self.render_html('librarian/login.html', {'alert_msg': alert_msg, 'alert_type': alert_type})
-            return
-
-        if path in ['/student/login', '/login/student']:
-            if user:
-                self.redirect('/student/dashboard' if user['role'] == 'student' else '/librarian/dashboard')
-                return
-            self.render_html('student/login.html', {'alert_msg': alert_msg, 'alert_type': alert_type})
             return
 
         if path in ['/register', '/student/register', '/login/register']:
@@ -532,27 +518,22 @@ class LibraryRequestHandler(http.server.BaseHTTPRequestHandler):
         if path in ['/login', '/librarian/login', '/student/login', '/login/librarian', '/login/student']:
             identifier = post_data.get('identifier', '').strip()
             password = post_data.get('password', '').strip()
-            
-            default_role = 'librarian'
-            if 'student' in path:
-                default_role = 'student'
-            role = post_data.get('role', default_role).strip()
 
-            back_url = path if path != '/login' else '/login'
             if not identifier or not password:
-                self.redirect(f'{back_url}?msg=Please+enter+both+ID+and+password&type=danger')
+                self.redirect('/login?msg=Please+enter+both+ID%2FEmail+and+password&type=danger')
                 return
 
             try:
-                user = db.authenticate_user(identifier, password, role)
+                # Automatic role detection from database
+                user = db.authenticate_user(identifier, password)
                 if user:
                     cookie = self.create_session(user)
                     dest = '/librarian/dashboard' if user['role'] == 'librarian' else '/student/dashboard'
                     self.redirect(dest, cookie)
                 else:
-                    self.redirect(f'{back_url}?msg=Invalid+credentials+or+account+type!&type=danger')
+                    self.redirect('/login?msg=Invalid+ID%2FEmail+or+password!&type=danger')
             except Exception as e:
-                self.redirect(f'{back_url}?msg=Database+error:+{urllib.parse.quote(str(e))}&type=danger')
+                self.redirect(f'/login?msg=Database+error:+{urllib.parse.quote(str(e))}&type=danger')
             return
 
         if path in ['/register', '/student/register', '/login/register']:
