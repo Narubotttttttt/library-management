@@ -10,11 +10,9 @@
     <div class="app-container">
         <aside class="sidebar">
             <div class="brand">
-                <div class="brand-icon">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-                </div>
+                <img src="/static/images/logo.jpg" alt="TCC Logo" class="brand-logo-img">
                 <div>
-                    <div class="brand-title">UniLibrary</div>
+                    <div class="brand-title">TCC Library</div>
                     <span class="brand-badge">Librarian Portal</span>
                 </div>
             </div>
@@ -35,7 +33,7 @@
                 </a></li>
                 <li><a href="/librarian/students" class="nav-link">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    Student Patrons
+                    Students
                 </a></li>
             </ul>
 
@@ -68,32 +66,32 @@
             {{ALERT_BOX}}
 
             <div class="metrics-grid">
-                <div class="stat-card" style="--card-accent: #4f46e5;">
+                <div class="stat-card" style="--card-accent: #c81e1e;">
                     <div class="stat-info">
                         <span class="stat-label">Total Titles in Catalog</span>
                         <span class="stat-value">{{TOTAL_BOOKS}}</span>
                     </div>
-                    <div class="stat-icon" style="color: #4f46e5;">
+                    <div class="stat-icon" style="color: #c81e1e;">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
                     </div>
                 </div>
 
-                <div class="stat-card" style="--card-accent: #2563eb;">
+                <div class="stat-card" style="--card-accent: #e11d48;">
                     <div class="stat-info">
                         <span class="stat-label">Currently Issued Copies</span>
                         <span class="stat-value">{{BORROWED_COUNT}}</span>
                     </div>
-                    <div class="stat-icon" style="color: #2563eb;">
+                    <div class="stat-icon" style="color: #e11d48;">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
                     </div>
                 </div>
 
-                <div class="stat-card" style="--card-accent: #dc2626;">
+                <div class="stat-card" style="--card-accent: #b91c1c;">
                     <div class="stat-info">
                         <span class="stat-label">Overdue Returns</span>
-                        <span class="stat-value" style="color: #dc2626;">{{OVERDUE_COUNT}}</span>
+                        <span class="stat-value" style="color: #b91c1c;">{{OVERDUE_COUNT}}</span>
                     </div>
-                    <div class="stat-icon" style="color: #dc2626;">
+                    <div class="stat-icon" style="color: #b91c1c;">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                     </div>
                 </div>
@@ -138,7 +136,7 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Student Patron</th>
+                            <th>Student</th>
                             <th>Book Title</th>
                             <th>Issue Date</th>
                             <th>Due Date</th>

@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Registration - University Library</title>
+    <title>Student Registration - Tagoloan Community College Library</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <div class="auth-wrapper">
         <div class="auth-card" style="max-width: 500px;">
             <div class="auth-header">
-                <div class="auth-logo-badge">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
-                </div>
-                <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 4px; color: var(--text-main);">Student Registration</h1>
-                <p style="font-size: 13px; color: var(--text-muted);">Create your library member account</p>
+                <img src="/static/images/logo.jpg" alt="Tagoloan Community College Logo" class="auth-logo-img">
+                <h1 style="font-size: 21px; font-weight: 700; margin-bottom: 4px; color: var(--text-main);">Tagoloan Community College</h1>
+                <p style="font-size: 13.5px; color: var(--text-muted);">Student Library Registration</p>
             </div>
 
             {{ALERT_BOX}}
@@ -28,7 +26,7 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                     <div class="form-group">
                         <label class="form-label">Student ID</label>
-                        <input type="text" name="user_id_number" class="form-control" placeholder="e.g. STU-2026-003" required>
+                        <input type="text" name="user_id_number" class="form-control" placeholder="e.g. TCC-2026-001" required>
                     </div>
 
                     <div class="form-group">
@@ -39,12 +37,12 @@
 
                 <div class="form-group">
                     <label class="form-label">Course & Year Level</label>
-                    <input type="text" name="course_year" class="form-control" placeholder="e.g. BS Computer Science - 1st Year" required>
+                    <input type="text" name="course_year" class="form-control" placeholder="e.g. BS Information Technology - 1st Year" required>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">University Email</label>
-                    <input type="email" name="email" class="form-control" placeholder="e.g. juan@student.edu" required>
+                    <label class="form-label">Email Address</label>
+                    <input type="email" name="email" class="form-control" placeholder="e.g. juan@student.tcc.edu.ph" required>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
@@ -64,11 +62,9 @@
             </form>
 
             <div style="text-align: center; margin-top: 20px; font-size: 13.5px; color: var(--text-muted);">
-                Already registered? <a href="/login" style="color: var(--primary); font-weight: 600;">Sign in here</a>
+                Already registered? <a href="/student/login" style="color: var(--primary); font-weight: 600;">Sign in to Student Portal</a>
             </div>
         </div>
     </div>
-
-    <script src="/static/js/main.js"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@ import os
 import mimetypes
 import uuid
 import sys
+import socketserver
 from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -62,9 +63,26 @@ class LibraryRequestHandler(http.server.BaseHTTPRequestHandler):
         if context is None:
             context = {}
 
-        template_path = os.path.join(BASE_DIR, 'templates', template_name)
-        if not os.path.exists(template_path):
-            self.send_error(404, f"Template {template_name} not found")
+        # Resolve template across subfolders (librarian/, student/, login/, auth/)
+        candidates = [
+            os.path.join(BASE_DIR, 'templates', template_name),
+            os.path.join(BASE_DIR, 'templates', 'librarian', template_name),
+            os.path.join(BASE_DIR, 'templates', 'student', template_name),
+            os.path.join(BASE_DIR, 'templates', 'login', template_name),
+            os.path.join(BASE_DIR, 'templates', 'auth', template_name),
+        ]
+        if '_' in template_name and '/' not in template_name:
+            folder, rest = template_name.split('_', 1)
+            candidates.append(os.path.join(BASE_DIR, 'templates', folder, rest))
+
+        template_path = None
+        for cand in candidates:
+            if os.path.exists(cand) and os.path.isfile(cand):
+                template_path = cand
+                break
+
+        if not template_path:
+            self.send_error(404, f"Template '{template_name}' not found")
             return
 
         with open(template_path, 'r', encoding='utf-8') as f:
@@ -135,19 +153,34 @@ class LibraryRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.redirect('/student/dashboard')
             return
 
-        if path == '/login':
+        # Dedicated Login & Registration routes
+        if path in ['/login', '/login/portal']:
             if user:
                 dest = '/librarian/dashboard' if user['role'] == 'librarian' else '/student/dashboard'
                 self.redirect(dest)
                 return
-            self.render_html('login.html', {'alert_msg': alert_msg, 'alert_type': alert_type})
+            self.render_html('login/login.html', {'alert_msg': alert_msg, 'alert_type': alert_type})
             return
 
-        if path == '/register':
+        if path in ['/librarian/login', '/login/librarian']:
+            if user:
+                self.redirect('/librarian/dashboard' if user['role'] == 'librarian' else '/student/dashboard')
+                return
+            self.render_html('librarian/login.html', {'alert_msg': alert_msg, 'alert_type': alert_type})
+            return
+
+        if path in ['/student/login', '/login/student']:
+            if user:
+                self.redirect('/student/dashboard' if user['role'] == 'student' else '/librarian/dashboard')
+                return
+            self.render_html('student/login.html', {'alert_msg': alert_msg, 'alert_type': alert_type})
+            return
+
+        if path in ['/register', '/student/register', '/login/register']:
             if user:
                 self.redirect('/')
                 return
-            self.render_html('register.html', {'alert_msg': alert_msg, 'alert_type': alert_type})
+            self.render_html('student/register.html', {'alert_msg': alert_msg, 'alert_type': alert_type})
             return
 
         if path == '/logout':
@@ -197,7 +230,7 @@ class LibraryRequestHandler(http.server.BaseHTTPRequestHandler):
                     'alert_msg': alert_msg,
                     'alert_type': alert_type
                 }
-                self.render_html('librarian_dashboard.html', context)
+                self.render_html('librarian/dashboard.html', context)
                 return
 
             if path == '/librarian/books':
@@ -243,7 +276,7 @@ class LibraryRequestHandler(http.server.BaseHTTPRequestHandler):
                     'alert_msg': alert_msg,
                     'alert_type': alert_type
                 }
-                self.render_html('librarian_books.html', context)
+                self.render_html('librarian/books.html', context)
                 return
 
             if path == '/librarian/circulation':
@@ -322,7 +355,7 @@ class LibraryRequestHandler(http.server.BaseHTTPRequestHandler):
                     'alert_msg': alert_msg,
                     'alert_type': alert_type
                 }
-                self.render_html('librarian_circulation.html', context)
+                self.render_html('librarian/circulation.html', context)
                 return
 
             if path == '/librarian/students':
@@ -351,7 +384,7 @@ class LibraryRequestHandler(http.server.BaseHTTPRequestHandler):
                     'alert_msg': alert_msg,
                     'alert_type': alert_type
                 }
-                self.render_html('librarian_students.html', context)
+                self.render_html('librarian/students.html', context)
                 return
 
         if path.startswith('/student'):
@@ -431,7 +464,7 @@ class LibraryRequestHandler(http.server.BaseHTTPRequestHandler):
                     'alert_msg': alert_msg,
                     'alert_type': alert_type
                 }
-                self.render_html('student_dashboard.html', context)
+                self.render_html('student/dashboard.html', context)
                 return
 
             if path == '/student/catalog':
@@ -486,7 +519,7 @@ class LibraryRequestHandler(http.server.BaseHTTPRequestHandler):
                     'alert_msg': alert_msg,
                     'alert_type': alert_type
                 }
-                self.render_html('student_catalog.html', context)
+                self.render_html('student/catalog.html', context)
                 return
 
         self.send_error(404, "Page not found")
@@ -496,13 +529,18 @@ class LibraryRequestHandler(http.server.BaseHTTPRequestHandler):
         path = parsed_url.path
         post_data = self.parse_post_data()
 
-        if path == '/login':
+        if path in ['/login', '/librarian/login', '/student/login', '/login/librarian', '/login/student']:
             identifier = post_data.get('identifier', '').strip()
             password = post_data.get('password', '').strip()
-            role = post_data.get('role', 'librarian').strip()
+            
+            default_role = 'librarian'
+            if 'student' in path:
+                default_role = 'student'
+            role = post_data.get('role', default_role).strip()
 
+            back_url = path if path != '/login' else '/login'
             if not identifier or not password:
-                self.redirect('/login?msg=Please+enter+both+ID+and+password&type=danger')
+                self.redirect(f'{back_url}?msg=Please+enter+both+ID+and+password&type=danger')
                 return
 
             try:
@@ -512,12 +550,12 @@ class LibraryRequestHandler(http.server.BaseHTTPRequestHandler):
                     dest = '/librarian/dashboard' if user['role'] == 'librarian' else '/student/dashboard'
                     self.redirect(dest, cookie)
                 else:
-                    self.redirect('/login?msg=Invalid+credentials+or+account+type!&type=danger')
+                    self.redirect(f'{back_url}?msg=Invalid+credentials+or+account+type!&type=danger')
             except Exception as e:
-                self.redirect(f'/login?msg=Database+error:+{urllib.parse.quote(str(e))}&type=danger')
+                self.redirect(f'{back_url}?msg=Database+error:+{urllib.parse.quote(str(e))}&type=danger')
             return
 
-        if path == '/register':
+        if path in ['/register', '/student/register', '/login/register']:
             full_name = post_data.get('full_name', '').strip()
             user_id_number = post_data.get('user_id_number', '').strip()
             email = post_data.get('email', '').strip()
@@ -526,15 +564,16 @@ class LibraryRequestHandler(http.server.BaseHTTPRequestHandler):
             password = post_data.get('password', '').strip()
             confirm_pwd = post_data.get('confirm_password', '').strip()
 
+            back_url = '/student/register' if 'student' in path else '/register'
             if password != confirm_pwd:
-                self.redirect('/register?msg=Passwords+do+not+match!&type=danger')
+                self.redirect(f'{back_url}?msg=Passwords+do+not+match!&type=danger')
                 return
 
             success, msg = db.register_student(user_id_number, full_name, email, password, course_year, contact_number)
             if success:
-                self.redirect('/login?msg=Registration+successful!+Please+log+in.&type=success')
+                self.redirect('/student/login?msg=Registration+successful!+Please+log+in.&type=success')
             else:
-                self.redirect(f'/register?msg={urllib.parse.quote(msg)}&type=danger')
+                self.redirect(f'{back_url}?msg={urllib.parse.quote(msg)}&type=danger')
             return
 
         user = self.get_session()
@@ -619,11 +658,16 @@ class LibraryRequestHandler(http.server.BaseHTTPRequestHandler):
         self.send_error(400, "Bad Request")
 
 
+class ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+
+
 def run_server():
     db.initialize_database()
 
     server_address = ('', PORT)
-    httpd = http.server.HTTPServer(server_address, LibraryRequestHandler)
+    httpd = ThreadedHTTPServer(server_address, LibraryRequestHandler)
     print(f"Library Server running on http://localhost:{PORT}")
 
     try:

@@ -86,10 +86,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (idLabel && idInput) {
                     if (role === 'librarian') {
                         idLabel.textContent = 'Librarian ID or Email';
-                        idInput.placeholder = 'e.g. LIB-001 or librarian@university.edu';
+                        idInput.placeholder = 'example@gmail.com or 202_-1234';
                     } else {
                         idLabel.textContent = 'Student ID or Email';
-                        idInput.placeholder = 'e.g. STU-2026-001 or alex@student.edu';
+                        idInput.placeholder = 'student@gmail.com or 202_-1234';
                     }
                 }
             });

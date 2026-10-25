@@ -1,18 +1,8 @@
 import hashlib
 import os
 from datetime import datetime, date, timedelta
-
-DB_DRIVER = None
-try:
-    import pymysql
-    import pymysql.cursors
-    DB_DRIVER = 'pymysql'
-except ImportError:
-    try:
-        import mysql.connector
-        DB_DRIVER = 'mysql.connector'
-    except ImportError:
-        DB_DRIVER = None
+import pymysql
+import pymysql.cursors
 
 DB_CONFIG = {
     'host': 'localhost',
@@ -30,63 +20,48 @@ def hash_password(password: str) -> str:
 
 
 def get_connection():
-    if DB_DRIVER == 'pymysql':
-        return pymysql.connect(
-            host=DB_CONFIG['host'],
-            port=DB_CONFIG['port'],
-            user=DB_CONFIG['user'],
-            password=DB_CONFIG['password'],
-            database=DB_CONFIG['database'],
-            cursorclass=pymysql.cursors.DictCursor,
-            autocommit=True
-        )
-    elif DB_DRIVER == 'mysql.connector':
-        return mysql.connector.connect(
-            host=DB_CONFIG['host'],
-            port=DB_CONFIG['port'],
-            user=DB_CONFIG['user'],
-            password=DB_CONFIG['password'],
-            database=DB_CONFIG['database']
-        )
-    else:
-        raise RuntimeError("No MySQL driver found. Run: pip install pymysql")
+    return pymysql.connect(
+        host=DB_CONFIG['host'],
+        port=DB_CONFIG['port'],
+        user=DB_CONFIG['user'],
+        password=DB_CONFIG['password'],
+        database=DB_CONFIG['database'],
+        cursorclass=pymysql.cursors.DictCursor,
+        autocommit=True
+    )
 
 
 def initialize_database():
-    if not DB_DRIVER:
-        return False
-
     schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
     if not os.path.exists(schema_path):
         return False
 
     try:
-        if DB_DRIVER == 'pymysql':
-            raw_conn = pymysql.connect(
-                host=DB_CONFIG['host'],
-                port=DB_CONFIG['port'],
-                user=DB_CONFIG['user'],
-                password=DB_CONFIG['password']
-            )
-            with raw_conn.cursor() as cursor:
-                cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{DB_CONFIG['database']}` DEFAULT CHARACTER SET utf8mb4;")
-            raw_conn.close()
+        raw_conn = pymysql.connect(
+            host=DB_CONFIG['host'],
+            port=DB_CONFIG['port'],
+            user=DB_CONFIG['user'],
+            password=DB_CONFIG['password']
+        )
+        with raw_conn.cursor() as cursor:
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{DB_CONFIG['database']}` DEFAULT CHARACTER SET utf8mb4;")
+        raw_conn.close()
 
-            conn = get_connection()
-            with conn.cursor() as cursor:
-                cursor.execute("SHOW TABLES LIKE 'users';")
-                if not cursor.fetchone():
-                    with open(schema_path, 'r', encoding='utf-8') as f:
-                        sql_statements = f.read().split(';')
-                        for stmt in sql_statements:
-                            stmt = stmt.strip()
-                            if stmt:
-                                try:
-                                    cursor.execute(stmt)
-                                except Exception:
-                                    pass
-            conn.close()
-            return True
+        conn = get_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("SHOW TABLES LIKE 'users';")
+            if not cursor.fetchone():
+                with open(schema_path, 'r', encoding='utf-8') as f:
+                    sql_statements = f.read().split(';')
+                    for stmt in sql_statements:
+                        stmt = stmt.strip()
+                        if stmt:
+                            try:
+                                cursor.execute(stmt)
+                            except Exception:
+                                pass
+        conn.close()
+        return True
     except Exception:
         return False
 
@@ -94,7 +69,7 @@ def initialize_database():
 def authenticate_user(identifier: str, password: str, role: str):
     conn = get_connection()
     try:
-        cursor = conn.cursor(pymysql.cursors.DictCursor) if DB_DRIVER == 'pymysql' else conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         pwd_hash = hash_password(password)
 
         query = """
@@ -132,10 +107,31 @@ def register_student(user_id_number: str, full_name: str, email: str, password: 
         conn.close()
 
 
+def create_librarian(user_id_number: str, full_name: str, email: str, password: str):
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        pwd_hash = hash_password(password)
+
+        query = """
+            INSERT INTO users (user_id_number, full_name, email, password, role)
+            VALUES (%s, %s, %s, %s, 'librarian');
+        """
+        cursor.execute(query, (user_id_number, full_name, email, pwd_hash))
+        return True, "Librarian account created successfully!"
+    except Exception as e:
+        err_msg = str(e)
+        if 'Duplicate' in err_msg or 'UNIQUE' in err_msg:
+            return False, "Librarian ID or Email is already registered!"
+        return False, f"Failed to create librarian account: {err_msg}"
+    finally:
+        conn.close()
+
+
 def get_dashboard_stats():
     conn = get_connection()
     try:
-        cursor = conn.cursor(pymysql.cursors.DictCursor) if DB_DRIVER == 'pymysql' else conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         
         cursor.execute("SELECT COUNT(*) AS total_books FROM books;")
         total_books = cursor.fetchone()['total_books']
@@ -162,7 +158,7 @@ def get_dashboard_stats():
 def get_recent_transactions(limit=8):
     conn = get_connection()
     try:
-        cursor = conn.cursor(pymysql.cursors.DictCursor) if DB_DRIVER == 'pymysql' else conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         query = """
             SELECT br.id, br.borrow_date, br.due_date, br.return_date, br.fine_amount, br.status,
                    u.full_name AS student_name, u.user_id_number,
@@ -182,7 +178,7 @@ def get_recent_transactions(limit=8):
 def get_all_books():
     conn = get_connection()
     try:
-        cursor = conn.cursor(pymysql.cursors.DictCursor) if DB_DRIVER == 'pymysql' else conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         query = """
             SELECT b.id, b.isbn, b.title, b.author, b.category_id, b.total_copies, 
                    b.available_copies, b.shelf_location, b.description,
@@ -200,7 +196,7 @@ def get_all_books():
 def get_categories():
     conn = get_connection()
     try:
-        cursor = conn.cursor(pymysql.cursors.DictCursor) if DB_DRIVER == 'pymysql' else conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         cursor.execute("SELECT id, name, description FROM categories ORDER BY name ASC;")
         return cursor.fetchall()
     finally:
@@ -227,7 +223,7 @@ def add_book(title, author, isbn, category_id, total_copies, shelf_location, des
 def update_book(book_id, title, author, isbn, category_id, total_copies, shelf_location, description):
     conn = get_connection()
     try:
-        cursor = conn.cursor(pymysql.cursors.DictCursor) if DB_DRIVER == 'pymysql' else conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         cursor.execute("SELECT total_copies, available_copies FROM books WHERE id = %s;", (book_id,))
         curr = cursor.fetchone()
         if not curr:
@@ -270,7 +266,7 @@ def delete_book(book_id):
 def get_active_borrows():
     conn = get_connection()
     try:
-        cursor = conn.cursor(pymysql.cursors.DictCursor) if DB_DRIVER == 'pymysql' else conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         
         update_fine_sql = """
             UPDATE borrow_records 
@@ -300,7 +296,7 @@ def get_active_borrows():
 def issue_book(user_id, book_id, loan_days=7):
     conn = get_connection()
     try:
-        cursor = conn.cursor(pymysql.cursors.DictCursor) if DB_DRIVER == 'pymysql' else conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         
         cursor.execute("SELECT available_copies, title FROM books WHERE id = %s;", (book_id,))
         book = cursor.fetchone()
@@ -337,7 +333,7 @@ def issue_book(user_id, book_id, loan_days=7):
 def process_return(record_id):
     conn = get_connection()
     try:
-        cursor = conn.cursor(pymysql.cursors.DictCursor) if DB_DRIVER == 'pymysql' else conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         
         cursor.execute("SELECT book_id, due_date, fine_amount FROM borrow_records WHERE id = %s AND return_date IS NULL;", (record_id,))
         record = cursor.fetchone()
@@ -371,7 +367,7 @@ def process_return(record_id):
 def get_all_reservations():
     conn = get_connection()
     try:
-        cursor = conn.cursor(pymysql.cursors.DictCursor) if DB_DRIVER == 'pymysql' else conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         query = """
             SELECT r.id, r.reservation_date, r.status,
                    u.id AS student_id, u.full_name AS student_name, u.user_id_number,
@@ -391,7 +387,7 @@ def get_all_reservations():
 def reserve_book(user_id, book_id):
     conn = get_connection()
     try:
-        cursor = conn.cursor(pymysql.cursors.DictCursor) if DB_DRIVER == 'pymysql' else conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         
         cursor.execute("SELECT id FROM reservations WHERE user_id = %s AND book_id = %s AND status = 'pending';", (user_id, book_id))
         if cursor.fetchone():
@@ -425,7 +421,7 @@ def cancel_reservation(reservation_id, user_id=None):
 def get_students_directory():
     conn = get_connection()
     try:
-        cursor = conn.cursor(pymysql.cursors.DictCursor) if DB_DRIVER == 'pymysql' else conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         query = """
             SELECT u.id, u.user_id_number, u.full_name, u.email, u.course_year, u.contact_number,
                    COUNT(CASE WHEN br.return_date IS NULL THEN 1 END) AS active_loans,
@@ -445,7 +441,7 @@ def get_students_directory():
 def get_student_borrow_records(user_id):
     conn = get_connection()
     try:
-        cursor = conn.cursor(pymysql.cursors.DictCursor) if DB_DRIVER == 'pymysql' else conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         
         cursor.execute("""
             UPDATE borrow_records 
@@ -472,7 +468,7 @@ def get_student_borrow_records(user_id):
 def get_student_reservations(user_id):
     conn = get_connection()
     try:
-        cursor = conn.cursor(pymysql.cursors.DictCursor) if DB_DRIVER == 'pymysql' else conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         query = """
             SELECT r.id, r.reservation_date, r.status,
                    b.title AS book_title, b.author, b.shelf_location
