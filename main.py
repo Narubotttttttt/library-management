@@ -13,7 +13,6 @@ books = [
     {"id": 8, "title": "To Kill a Mockingbird", "author": "Harper Lee", "category": "Literature", "copies": 2}
 ]
 
-# sample users (students and librarian)
 users = [
     {
         "username": "admin",
@@ -23,22 +22,7 @@ users = [
         "course": "Faculty / Staff",
         "contact": "09112223333"
     },
-    {
-        "username": "2024-001",
-        "password": "123",
-        "name": "Juan Dela Cruz",
-        "role": "student",
-        "course": "BSIT - 2A",
-        "contact": "09123456789"
-    },
-    {
-        "username": "2024-002",
-        "password": "123",
-        "name": "Maria Santos",
-        "role": "student",
-        "course": "BSBA - 1B",
-        "contact": "09987654321"
-    }
+
 ]
 
 borrow_records = []

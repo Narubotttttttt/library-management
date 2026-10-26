@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Librarian Dashboard - Library System</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="brand">
+                <img src="/static/images/logo.jpg" alt="TCC Logo" class="brand-logo-img">
+                <div>
+                    <div class="brand-title">TCC Library</div>
+                    <span class="brand-badge">Librarian Portal</span>
+                </div>
+            </div>
+
+            <div class="nav-section-title">Operations</div>
+            <ul class="nav-menu">
+                <li><a href="/librarian/dashboard" class="nav-link active">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                    Dashboard
+                </a></li>
+                <li><a href="/librarian/books" class="nav-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    Book Inventory
+                </a></li>
+                <li><a href="/librarian/circulation" class="nav-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                    Circulation & Loans
+                </a></li>
+                <li><a href="/librarian/students" class="nav-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    Students
+                </a></li>
+            </ul>
+
+            <div class="user-profile-box">
+                <div class="user-meta">
+                    <div class="user-avatar">LB</div>
+                    <div class="user-details">
+                        <div class="user-name">{{USER_NAME}}</div>
+                        <div class="user-role-tag">{{USER_ID_NUMBER}}</div>
+                    </div>
+                </div>
+                <a href="/logout" class="btn-logout" title="Sign Out">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="page-title-group">
+                    <h1>Circulation Overview</h1>
+                    <p>Welcome back, {{USER_NAME}}. Here is today's library circulation summary.</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <a href="/librarian/books" class="btn btn-secondary btn-sm">+ Add Book</a>
+                    <a href="/librarian/circulation" class="btn btn-primary btn-sm">Issue / Return</a>
+                </div>
+            </div>
+
+            {{ALERT_BOX}}
+
+            <div class="metrics-grid">
+                <div class="stat-card" style="--card-accent: #c81e1e;">
+                    <div class="stat-info">
+                        <span class="stat-label">Total Titles in Catalog</span>
+                        <span class="stat-value">{{TOTAL_BOOKS}}</span>
+                    </div>
+                    <div class="stat-icon" style="color: #c81e1e;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="--card-accent: #e11d48;">
+                    <div class="stat-info">
+                        <span class="stat-label">Currently Issued Copies</span>
+                        <span class="stat-value">{{BORROWED_COUNT}}</span>
+                    </div>
+                    <div class="stat-icon" style="color: #e11d48;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="--card-accent: #b91c1c;">
+                    <div class="stat-info">
+                        <span class="stat-label">Overdue Returns</span>
+                        <span class="stat-value" style="color: #b91c1c;">{{OVERDUE_COUNT}}</span>
+                    </div>
+                    <div class="stat-icon" style="color: #b91c1c;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="--card-accent: #d97706;">
+                    <div class="stat-info">
+                        <span class="stat-label">Pending Reservations</span>
+                        <span class="stat-value" style="color: #d97706;">{{RESERVATIONS_COUNT}}</span>
+                    </div>
+                    <div class="stat-icon" style="color: #d97706;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <div style="background: #ffffff; border: 1px solid var(--border-subtle); padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 style="font-size: 15px; font-weight: 600; color: var(--text-main);">Issue a Book to Student</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Assign an available book copy using student ID</p>
+                    </div>
+                    <a href="/librarian/circulation" class="btn btn-primary btn-sm">Issue Book</a>
+                </div>
+
+                <div style="background: #ffffff; border: 1px solid var(--border-subtle); padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 style="font-size: 15px; font-weight: 600; color: var(--text-main);">Review Pending Reservations</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Process hold requests submitted by students</p>
+                    </div>
+                    <a href="/librarian/circulation#reservations" class="btn btn-secondary btn-sm">Review ({{RESERVATIONS_COUNT}})</a>
+                </div>
+            </div>
+
+            <div class="top-bar" style="margin-bottom: 16px;">
+                <div>
+                    <h2 style="font-size: 18px; font-weight: 600; color: var(--text-main);">Recent Circulation Log</h2>
+                    <p style="font-size: 13px; color: var(--text-muted);">Latest checkouts, returns, and penalty calculations</p>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Book Title</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Accrued Fine</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{RECENT_TRANSACTIONS_ROWS}}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
