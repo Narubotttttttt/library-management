@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Library Management System</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header (shown when logged in) -->
+    <header id="app-header" class="app-header" style="display: none;">
+      <div class="brand-section">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title" id="header-portal-title">Library Management System</div>
+          <div class="brand-subtitle" id="header-sub-title">Automated Circulation & Catalog</div>
+        </div>
+      </div>
+
+      <div class="header-user">
+        <div class="user-badge">
+          <div class="user-avatar" id="header-user-avatar">U</div>
+          <span id="header-user-name">User Name</span>
+          <span id="header-user-role" style="opacity: 0.7; font-size: 0.8rem;">(Role)</span>
+        </div>
+        <button class="btn-logout" id="btn-logout">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- VIEW 1: LOGIN & REGISTRATION SCREEN -->
+    <div id="view-login" class="login-wrapper">
+      <div class="login-card">
+        <div class="login-header">
+          <div class="login-header-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </div>
+          <h1 class="login-title">Library Portal</h1>
+          <p class="login-subtitle">Sign in to manage inventory or borrow books</p>
+        </div>
+
+        <form id="login-form">
+          <div class="form-group">
+            <label for="login-username">Student ID / Username</label>
+            <input type="text" id="login-username" class="form-input" placeholder="e.g. admin or 2024-001" required autofocus>
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="submit" class="btn-block btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                <polyline points="10 17 15 12 10 7"></polyline>
+                <line x1="15" y1="12" x2="3" y2="12"></line>
+              </svg>
+              Login
+            </button>
+            <button type="button" id="btn-show-register" class="btn-block btn-secondary">
+              Register
+            </button>
+          </div>
+        </form>
+
+        <div class="demo-credentials">
+          <div class="demo-title">Quick Demo Logins</div>
+          <div class="demo-item">
+            <span>Librarian:</span>
+            <span class="demo-chip" onclick="quickFill('admin', '123')">admin / 123</span>
+          </div>
+          <div class="demo-item">
+            <span>Student:</span>
+            <span class="demo-chip" onclick="quickFill('2024-001', '123')">2024-001 / 123</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: STUDENT PORTAL -->
+    <main id="view-student" class="main-content" style="display: none;">
+      <!-- Search & Filter Toolbar -->
+      <div class="toolbar">
+        <div class="search-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="student-search-input" placeholder="Search by title, author, category, shelf...">
+        </div>
+
+        <div class="toolbar-actions">
+          <button class="btn btn-outline" id="student-search-reset">Reset</button>
+          <button class="btn btn-primary" id="btn-student-borrow">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12h14"></path>
+            </svg>
+            Borrow Book
+          </button>
+          <button class="btn btn-outline" id="btn-student-reserve">Reserve Book</button>
+          <button class="btn btn-success" id="btn-student-my-loans">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            My Borrowed Books & Returns
+          </button>
+        </div>
+      </div>
+
+      <!-- Student Catalog Table -->
+      <div class="table-card" style="flex: 1;">
+        <div class="table-container">
+          <table id="student-books-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">ID</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Category</th>
+                <th>Shelf Location</th>
+                <th style="text-align: center;">Copies Available</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="student-books-tbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <!-- VIEW 3: LIBRARIAN ADMIN DESK -->
+    <main id="view-admin" class="main-content" style="display: none;">
+      <!-- Metric Analytics Cards -->
+      <div class="metrics-grid">
+        <div class="metric-card card-blue">
+          <div class="metric-info">
+            <div class="metric-val" id="metric-titles">0</div>
+            <div class="metric-label">Total Titles</div>
+          </div>
+          <div class="metric-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </div>
+        </div>
+
+        <div class="metric-card card-orange">
+          <div class="metric-info">
+            <div class="metric-val" id="metric-borrowed">0</div>
+            <div class="metric-label">Active Loans</div>
+          </div>
+          <div class="metric-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <div class="metric-card card-red">
+          <div class="metric-info">
+            <div class="metric-val" id="metric-overdue">0</div>
+            <div class="metric-label">Overdue Books</div>
+          </div>
+          <div class="metric-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </div>
+        </div>
+
+        <div class="metric-card card-purple">
+          <div class="metric-info">
+            <div class="metric-val" id="metric-holds">0</div>
+            <div class="metric-label">Pending Holds</div>
+          </div>
+          <div class="metric-icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="tabs-nav">
+        <button class="tab-btn active" data-tab="tab-inventory">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+          Book Inventory
+        </button>
+        <button class="tab-btn" data-tab="tab-circulation">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          Circulation & Loans
+        </button>
+        <button class="tab-btn" data-tab="tab-students">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          Student Directory
+        </button>
+        <button class="tab-btn" data-tab="tab-reservations">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+          </svg>
+          Reservations List
+        </button>
+      </div>
+
+      <!-- TAB 1: Inventory Management -->
+      <div id="tab-inventory" class="tab-pane">
+        <div class="toolbar" style="margin-bottom: 16px;">
+          <div class="search-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="admin-inventory-search" placeholder="Filter inventory...">
+          </div>
+
+          <div class="toolbar-actions">
+            <button class="btn btn-teal" id="btn-admin-add-book">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Add New Book
+            </button>
+            <button class="btn btn-primary" id="btn-admin-restock">
+              Restock Copies
+            </button>
+            <button class="btn btn-danger-outline" id="btn-admin-delete-book">
+              Delete Book
+            </button>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-container">
+            <table id="admin-inventory-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">ID</th>
+                  <th>Title</th>
+                  <th>Author</th>
+                  <th>Category</th>
+                  <th>Shelf Location</th>
+                  <th style="text-align: center;">Copies Available</th>
+                </tr>
+              </thead>
+              <tbody id="admin-inventory-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Circulation & Loan Records -->
+      <div id="tab-circulation" class="tab-pane" style="display: none;">
+        <div class="toolbar" style="margin-bottom: 16px;">
+          <div style="font-weight: 700; color: #1e293b;">Active Loans & Return Records</div>
+          <div class="toolbar-actions">
+            <button class="btn btn-primary" id="btn-admin-issue-book">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"></path>
+              </svg>
+              Issue Book to Student
+            </button>
+            <button class="btn btn-success" id="btn-admin-return-book">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Record Returned Book
+            </button>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Record #</th>
+                  <th>Student ID</th>
+                  <th>Student Name</th>
+                  <th>Book Title</th>
+                  <th>Borrow Date</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Fine (PHP)</th>
+                </tr>
+              </thead>
+              <tbody id="admin-loans-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: Student Directory -->
+      <div id="tab-students" class="tab-pane" style="display: none;">
+        <div class="table-card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Student ID</th>
+                  <th>Full Name</th>
+                  <th>Course / Year</th>
+                  <th>Contact</th>
+                  <th>Email</th>
+                </tr>
+              </thead>
+              <tbody id="admin-students-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: Reservations List -->
+      <div id="tab-reservations" class="tab-pane" style="display: none;">
+        <div class="table-card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Hold ID</th>
+                  <th>Student ID</th>
+                  <th>Student Name</th>
+                  <th>Book Title</th>
+                  <th>Requested Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="admin-reservations-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- Modal: Student Registration -->
+    <div id="modal-register" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-title">Student Registration</div>
+          <button class="modal-close" onclick="closeModal('modal-register')">&times;</button>
+        </div>
+        <form id="form-register">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="reg-name">Full Name *</label>
+              <input type="text" id="reg-name" class="form-input" placeholder="e.g. Maria Santos" required>
+            </div>
+            <div class="form-group">
+              <label for="reg-id">Student ID *</label>
+              <input type="text" id="reg-id" class="form-input" placeholder="e.g. 2024-002" required>
+            </div>
+            <div class="form-group">
+              <label for="reg-password">Password *</label>
+              <input type="password" id="reg-password" class="form-input" placeholder="••••••••" required>
+            </div>
+            <div class="form-group">
+              <label for="reg-course">Course / Year Level</label>
+              <input type="text" id="reg-course" class="form-input" placeholder="e.g. BS Computer Science 2">
+            </div>
+            <div class="form-group">
+              <label for="reg-email">Email Address</label>
+              <input type="email" id="reg-email" class="form-input" placeholder="maria@school.edu">
+            </div>
+            <div class="form-group">
+              <label for="reg-contact">Contact Number</label>
+              <input type="text" id="reg-contact" class="form-input" placeholder="09123456789">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="closeModal('modal-register')">Cancel</button>
+            <button type="submit" class="btn btn-primary">Complete Registration</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Add New Book -->
+    <div id="modal-add-book" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-title">Add New Book Acquisition</div>
+          <button class="modal-close" onclick="closeModal('modal-add-book')">&times;</button>
+        </div>
+        <form id="form-add-book">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="book-title">Book Title *</label>
+              <input type="text" id="book-title" class="form-input" placeholder="e.g. Clean Architecture" required>
+            </div>
+            <div class="form-group">
+              <label for="book-author">Author *</label>
+              <input type="text" id="book-author" class="form-input" placeholder="e.g. Robert C. Martin" required>
+            </div>
+            <div class="form-group">
+              <label for="book-category">Category</label>
+              <input type="text" id="book-category" class="form-input" placeholder="e.g. Software Engineering">
+            </div>
+            <div class="form-group">
+              <label for="book-shelf">Shelf Location</label>
+              <input type="text" id="book-shelf" class="form-input" placeholder="e.g. Shelf E-1">
+            </div>
+            <div class="form-group">
+              <label for="book-copies">Initial Available Copies</label>
+              <input type="number" id="book-copies" class="form-input" min="1" value="3" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-book')">Cancel</button>
+            <button type="submit" class="btn btn-teal">Add Book</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Restock Book -->
+    <div id="modal-restock" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-title">Restock Book Copies</div>
+          <button class="modal-close" onclick="closeModal('modal-restock')">&times;</button>
+        </div>
+        <form id="form-restock">
+          <div class="modal-body">
+            <p id="restock-book-info" style="margin-bottom: 14px; font-weight: 600;"></p>
+            <div class="form-group">
+              <label for="restock-qty">Copies to Add</label>
+              <input type="number" id="restock-qty" class="form-input" min="1" value="2" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="closeModal('modal-restock')">Cancel</button>
+            <button type="submit" class="btn btn-primary">Confirm Restock</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Issue Book to Student -->
+    <div id="modal-issue" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-title">Issue Book to Registered Student</div>
+          <button class="modal-close" onclick="closeModal('modal-issue')">&times;</button>
+        </div>
+        <form id="form-issue">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="issue-book-select">Select Book *</label>
+              <select id="issue-book-select" class="form-input" required></select>
+            </div>
+            <div class="form-group">
+              <label for="issue-student-select">Select Student *</label>
+              <select id="issue-student-select" class="form-input" required></select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="closeModal('modal-issue')">Cancel</button>
+            <button type="submit" class="btn btn-primary">Issue Book</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Return Book (Admin) -->
+    <div id="modal-return-admin" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog wide">
+        <div class="modal-header">
+          <div class="modal-title">Record Returned Book</div>
+          <button class="modal-close" onclick="closeModal('modal-return-admin')">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+            Select an active loan below to process return and automatically calculate overdue penalty fines.
+          </p>
+          <div class="table-card">
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Loan #</th>
+                    <th>Borrower</th>
+                    <th>Book Title</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Fine</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="return-admin-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-return-admin')">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Student's Borrowed Books & Returns -->
+    <div id="modal-student-loans" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog wide">
+        <div class="modal-header">
+          <div class="modal-title">My Borrowed Books & Deadlines</div>
+          <button class="modal-close" onclick="closeModal('modal-student-loans')">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="table-card">
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Book Title</th>
+                    <th>Borrowed Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Penalty Fine</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="student-loans-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-student-loans')">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
