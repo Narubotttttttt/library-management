@@ -22,19 +22,18 @@ users = [
     {
         "username": "admin",
         "password": "123",
-        "name": "Head Librarian",
+        "name": "Alexander Romero",
         "role": "librarian",
-        "email": "librarian@school.edu",
-        "course": "Faculty / Staff",
+        "email": "alexanderromero@gmail.com",
         "contact": "09112223333"
     },
     {
-        "username": "2024-001",
+        "username": "20264926",
         "password": "123",
-        "name": "Juan Dela Cruz",
+        "name": "Richmond Depanso",
         "role": "student",
-        "email": "juan.delacruz@school.edu",
-        "course": "BS Information Technology 3",
+        "email": "richmonddepanso1@gmail.com",
+        "course": "BSIT1A",
         "contact": "09187654321"
     }
 ]
@@ -42,7 +41,6 @@ users = [
 borrow_records = []
 reservations = []
 
-# Loan constants
 FINE_RATE = 10.0   # 10 pesos fine per day overdue
 BORROW_DAYS = 7    # 7 days standard loan period
 MAX_BORROW_LIMIT = 3
@@ -164,7 +162,7 @@ def calculate_overdue_fine(record):
     Compares the due date with the current system date.
     Returns: (overdue_days, fine_amount, is_overdue)
     """
-    if record["status"] == "Returned":
+    if record["status"] != "Borrowed" or not record.get("due_date"):
         return 0, record.get("fine", 0.0), False
 
     today = date.today()
@@ -179,26 +177,33 @@ def calculate_overdue_fine(record):
 
 # ================= BORROW & CIRCULATION LOGIC =================
 
-def borrow_book(user, book_id):
-    """Process a book borrow for a student with automated due date."""
+def request_borrow_book(user, book_id):
+    """
+    Student Workflow:
+    Submits a borrow request to the Librarian for approval.
+    Stock copy is not deducted until the Librarian approves it.
+    """
     book = find_book_by_id(book_id)
     if not book:
         return False, "Book not found."
 
     if book["copies"] <= 0:
-        return False, "Out of Stock: Sorry, this book has 0 copies available on the shelf.\nYou can reserve it instead."
+        return False, "Out of Stock: Sorry, this book currently has 0 copies available on the shelf.\nYou can place a reservation hold instead."
 
-    active_loans = [
+    # Prevent duplicate pending requests for the same book
+    pending_same = any(
         r for r in borrow_records
-        if r["username"] == user["username"] and r["status"] == "Borrowed"
+        if r["username"] == user["username"] and r["book_id"] == book["id"] and r["status"] == "Pending Approval"
+    )
+    if pending_same:
+        return False, f"You already submitted a request for '{book['title']}'.\nPlease wait for the Librarian to review it."
+
+    active_or_pending = [
+        r for r in borrow_records
+        if r["username"] == user["username"] and r["status"] in ("Borrowed", "Pending Approval")
     ]
-    if len(active_loans) >= MAX_BORROW_LIMIT:
-        return False, f"Borrow Limit: You have reached the maximum borrow limit of {MAX_BORROW_LIMIT} books."
-
-    book["copies"] -= 1
-
-    borrow_d = date.today()
-    due_d = borrow_d + timedelta(days=BORROW_DAYS)
+    if len(active_or_pending) >= MAX_BORROW_LIMIT:
+        return False, f"Borrow Limit Reached: You have {len(active_or_pending)} active/pending loan(s). Maximum allowed is {MAX_BORROW_LIMIT}."
 
     record = {
         "record_id": len(borrow_records) + 1,
@@ -207,6 +212,107 @@ def borrow_book(user, book_id):
         "course": user.get("course", "Student"),
         "book_id": book["id"],
         "book_title": book["title"],
+        "request_date": date.today().strftime("%Y-%m-%d"),
+        "borrow_date": None,
+        "due_date": None,
+        "return_date": None,
+        "status": "Pending Approval",
+        "fine": 0.0
+    }
+    borrow_records.append(record)
+    return True, f"Borrow request for '{book['title']}' sent to Librarian!\nPlease wait for Librarian approval."
+
+
+def borrow_book(user, book_id):
+    """Alias for student request_borrow_book."""
+    return request_borrow_book(user, book_id)
+
+
+def approve_borrow_request(record_id):
+    """
+    Librarian Workflow:
+    Approves a student's borrow request, deducts stock copy, and initiates the 7-day loan.
+    """
+    try:
+        rid = int(record_id)
+    except (ValueError, TypeError):
+        return False, "Invalid request record ID."
+
+    record = next((r for r in borrow_records if (r.get("record_id") == rid or r.get("id") == rid)), None)
+    if not record:
+        return False, f"Request record #{record_id} not found."
+
+    if record["status"] != "Pending Approval":
+        return False, f"Cannot approve: This request is already marked as '{record['status']}'."
+
+    book = find_book_by_id(record["book_id"])
+    if not book or book["copies"] <= 0:
+        return False, f"Cannot approve: '{record['book_title']}' is currently out of stock (0 copies on shelf)."
+
+    book["copies"] -= 1
+    borrow_d = date.today()
+    due_d = borrow_d + timedelta(days=BORROW_DAYS)
+
+    record["borrow_date"] = borrow_d.strftime("%Y-%m-%d")
+    record["due_date"] = due_d.strftime("%Y-%m-%d")
+    record["status"] = "Borrowed"
+
+    return True, f"Approved! '{record['book_title']}' has been officially issued to {record['name']}.\nReturn deadline is {due_d.strftime('%b %d, %Y')}."
+
+
+def reject_borrow_request(record_id):
+    """
+    Librarian Workflow:
+    Rejects a student's borrow request.
+    """
+    try:
+        rid = int(record_id)
+    except (ValueError, TypeError):
+        return False, "Invalid request record ID."
+
+    record = next((r for r in borrow_records if (r.get("record_id") == rid or r.get("id") == rid)), None)
+    if not record:
+        return False, f"Request record #{record_id} not found."
+
+    if record["status"] != "Pending Approval":
+        return False, f"Cannot reject: This request is already marked as '{record['status']}'."
+
+    record["status"] = "Rejected"
+    return True, f"Borrow request #{record_id} for '{record['book_title']}' has been rejected."
+
+
+def issue_book_to_student(student_id, book_id):
+    """Librarian feature: Issue book directly to walk-in student immediately at the desk."""
+    student = find_user_by_username(student_id)
+    if not student:
+        return False, f"Student with ID '{student_id}' not found."
+
+    book = find_book_by_id(book_id)
+    if not book:
+        return False, "Book not found."
+
+    if book["copies"] <= 0:
+        return False, f"Out of Stock: '{book['title']}' has 0 copies available."
+
+    active_loans = [
+        r for r in borrow_records
+        if r["username"] == student["username"] and r["status"] == "Borrowed"
+    ]
+    if len(active_loans) >= MAX_BORROW_LIMIT:
+        return False, f"Borrow limit reached: Student has {len(active_loans)} active borrowed books."
+
+    book["copies"] -= 1
+    borrow_d = date.today()
+    due_d = borrow_d + timedelta(days=BORROW_DAYS)
+
+    record = {
+        "record_id": len(borrow_records) + 1,
+        "username": student["username"],
+        "name": student["name"],
+        "course": student.get("course", "Student"),
+        "book_id": book["id"],
+        "book_title": book["title"],
+        "request_date": borrow_d.strftime("%Y-%m-%d"),
         "borrow_date": borrow_d.strftime("%Y-%m-%d"),
         "due_date": due_d.strftime("%Y-%m-%d"),
         "return_date": None,
@@ -214,15 +320,7 @@ def borrow_book(user, book_id):
         "fine": 0.0
     }
     borrow_records.append(record)
-    return True, f"'{book['title']}' borrowed successfully!\nDue date is {due_d.strftime('%b %d, %Y')} ({BORROW_DAYS} days loan)."
-
-
-def issue_book_to_student(student_id, book_id):
-    """Librarian feature: Issue book directly to any registered student."""
-    student = find_user_by_username(student_id)
-    if not student:
-        return False, f"Student with ID '{student_id}' not found."
-    return borrow_book(student, book_id)
+    return True, f"'{book['title']}' successfully issued to {student['name']}.\nDue date: {due_d.strftime('%b %d, %Y')}."
 
 
 def reserve_book(user, book_id):
@@ -306,17 +404,19 @@ def get_analytics_metrics():
     Calculate summary metrics for librarian dashboard metric cards:
     - Total catalog titles
     - Active borrowed books
+    - Pending borrow requests
     - Overdue books
     - Pending reservations
     """
     total_titles = len(books)
     active_borrowed = sum(1 for r in borrow_records if r["status"] == "Borrowed")
+    pending_requests = sum(1 for r in borrow_records if r["status"] == "Pending Approval")
     
     today = date.today()
     overdue_books = 0
     for r in borrow_records:
-        if r["status"] == "Borrowed":
-            due_d = datetime.strptime(record_due := r["due_date"], "%Y-%m-%d").date()
+        if r["status"] == "Borrowed" and r.get("due_date"):
+            due_d = datetime.strptime(r["due_date"], "%Y-%m-%d").date()
             if today > due_d:
                 overdue_books += 1
 
@@ -325,6 +425,7 @@ def get_analytics_metrics():
     return {
         "total_titles": total_titles,
         "active_borrowed": active_borrowed,
+        "pending_requests": pending_requests,
         "overdue_books": overdue_books,
         "pending_reservations": pending_reservations
     }

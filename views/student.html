@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal - School Library</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="sidebar-title">School Library</div>
+          <div class="sidebar-subtitle">Student Portal</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-label">Navigation</div>
+        
+        <button class="nav-item active" data-target="section-catalog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+          Browse Catalog
+        </button>
+
+        <button class="nav-item" data-target="section-loans">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          My Borrowed Books
+          <span class="nav-badge" id="badge-active-loans">0</span>
+        </button>
+
+        <button class="nav-item" data-target="section-holds">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+          </svg>
+          My Reservations
+        </button>
+      </nav>
+
+      <!-- Sidebar User Footer -->
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="user-avatar-sm" id="user-avatar">S</div>
+          <div class="user-details">
+            <div class="user-name-text" id="user-name">Loading...</div>
+            <div class="user-role-text" id="user-course">Student</div>
+          </div>
+        </div>
+        <button class="btn-sidebar-logout" id="btn-logout">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEWPORT -->
+    <main class="main-viewport">
+      <!-- Dynamic Topbar -->
+      <header class="topbar">
+        <div>
+          <div class="topbar-title" id="page-title">Book Catalog</div>
+          <div class="topbar-subtitle" id="page-subtitle">Search, explore available shelf copies, and request books from the librarian</div>
+        </div>
+      </header>
+
+      <!-- SECTION 1: BROWSE CATALOG -->
+      <section id="section-catalog" class="page-section">
+        <div class="toolbar">
+          <div class="search-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="search-input" placeholder="Search by title, author, category, shelf...">
+          </div>
+
+          <div class="toolbar-actions">
+            <button class="btn btn-outline" id="btn-reset-search">Reset Filter</button>
+            <button class="btn btn-primary" id="btn-borrow-selected">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"></path>
+              </svg>
+              Request to Borrow
+            </button>
+            <button class="btn btn-outline" id="btn-reserve-selected">Reserve Book</button>
+          </div>
+        </div>
+
+        <div class="table-card" style="flex: 1;">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 50px;">ID</th>
+                  <th>Book Title</th>
+                  <th>Author</th>
+                  <th>Category</th>
+                  <th>Shelf Location</th>
+                  <th style="text-align: center;">Available Copies</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="books-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: MY BORROWED BOOKS (Full Page View) -->
+      <section id="section-loans" class="page-section" style="display: none;">
+        <div class="toolbar">
+          <div>
+            <div style="font-weight: 700; color: #1e293b;">Personal Borrowing History & Approval Status</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+              Requests sent to the Librarian must be approved before you can pick up the book.
+            </div>
+          </div>
+          <div style="font-size: 0.85rem; color: #475569; background: #f1f5f9; padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            Overdue penalty rate: <strong>₱10.00 / day</strong>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Book Title</th>
+                  <th>Request Date</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Penalty Fine</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="loans-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: MY RESERVATIONS (Full Page View) -->
+      <section id="section-holds" class="page-section" style="display: none;">
+        <div class="toolbar">
+          <div style="font-weight: 700; color: #1e293b;">Active Book Holds & Reservations</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">
+            Books on hold will be prepared when new copies become available.
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Hold ID</th>
+                  <th>Book Title</th>
+                  <th>Requested Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="student-holds-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+  <script>
+    // --- Helper Utilities ---
+    function waitForApi() {
+      return new Promise((resolve) => {
+        if (window.pywebview && window.pywebview.api) {
+          resolve(window.pywebview.api);
+          return;
+        }
+        const onReady = () => {
+          window.removeEventListener("pywebviewready", onReady);
+          resolve(window.pywebview.api);
+        };
+        window.addEventListener("pywebviewready", onReady);
+        const interval = setInterval(() => {
+          if (window.pywebview && window.pywebview.api) {
+            clearInterval(interval);
+            window.removeEventListener("pywebviewready", onReady);
+            resolve(window.pywebview.api);
+          }
+        }, 50);
+      });
+    }
+
+    async function callApi(methodName, ...args) {
+      try {
+        const api = await waitForApi();
+        if (typeof api[methodName] === "function") {
+          return await api[methodName](...args);
+        }
+        return { success: false, message: `Method ${methodName} not found` };
+      } catch (err) {
+        return { success: false, message: String(err) };
+      }
+    }
+
+    function showToast(message, type = "info") {
+      let container = document.getElementById("toast-container");
+      if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        container.className = "toast-container";
+        document.body.appendChild(container);
+      }
+      const toast = document.createElement("div");
+      toast.className = `toast toast-${type}`;
+      let iconSvg = "";
+      if (type === "success") {
+        iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>`;
+      } else if (type === "error") {
+        iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+      } else {
+        iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+      }
+      toast.innerHTML = `${iconSvg}<div class="toast-msg">${String(message).replace(/\n/g, '<br>')}</div>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(50px)";
+        toast.style.transition = "all 0.3s ease";
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // --- Student Portal Logic ---
+    let currentUser = null;
+    let selectedBookId = null;
+
+    const navMeta = {
+      "section-catalog": { title: "Book Catalog", subtitle: "Search, explore available shelf copies, and request books from the librarian" },
+      "section-loans": { title: "My Borrowed Books & Requests", subtitle: "Monitor approval status, active loan deadlines, and return items" },
+      "section-holds": { title: "My Holds & Reservations", subtitle: "Track the queue and status of your requested book holds" }
+    };
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      currentUser = await callApi("get_current_user");
+      if (!currentUser) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      document.getElementById("user-name").textContent = currentUser.name;
+      document.getElementById("user-avatar").textContent = currentUser.name.charAt(0).toUpperCase();
+      document.getElementById("user-course").textContent = currentUser.course || "Student";
+
+      await loadCatalog();
+      await updateActiveLoansCount();
+
+      // Sidebar Navigation Click Handlers
+      document.querySelectorAll(".sidebar .nav-item").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          document.querySelectorAll(".sidebar .nav-item").forEach((b) => b.classList.remove("active"));
+          document.querySelectorAll(".page-section").forEach((s) => (s.style.display = "none"));
+
+          btn.classList.add("active");
+          const targetSection = btn.getAttribute("data-target");
+          const secEl = document.getElementById(targetSection);
+          if (secEl) secEl.style.display = "flex";
+
+          if (navMeta[targetSection]) {
+            document.getElementById("page-title").textContent = navMeta[targetSection].title;
+            document.getElementById("page-subtitle").textContent = navMeta[targetSection].subtitle;
+          }
+
+          if (targetSection === "section-catalog") await loadCatalog();
+          if (targetSection === "section-loans") await loadStudentLoans();
+          if (targetSection === "section-holds") await loadStudentHolds();
+        });
+      });
+
+      document.getElementById("btn-logout").addEventListener("click", async () => {
+        await callApi("logout");
+        window.location.href = "login.html";
+      });
+
+      const searchInput = document.getElementById("search-input");
+      searchInput.addEventListener("input", (e) => {
+        loadCatalog(e.target.value);
+      });
+
+      document.getElementById("btn-reset-search").addEventListener("click", () => {
+        searchInput.value = "";
+        loadCatalog("");
+      });
+
+      document.getElementById("btn-borrow-selected").addEventListener("click", () => {
+        if (!selectedBookId) {
+          showToast("Please select a book row from the table first.", "info");
+          return;
+        }
+        borrowBook(selectedBookId);
+      });
+
+      document.getElementById("btn-reserve-selected").addEventListener("click", () => {
+        if (!selectedBookId) {
+          showToast("Please select a book row from the table first.", "info");
+          return;
+        }
+        reserveBook(selectedBookId);
+      });
+    });
+
+    async function updateActiveLoansCount() {
+      const loans = await callApi("get_my_borrow_records");
+      const activeOrPending = (loans || []).filter((l) => l.status === "Borrowed" || l.status === "Pending Approval").length;
+      const badge = document.getElementById("badge-active-loans");
+      if (badge) badge.textContent = activeOrPending;
+    }
+
+    async function loadCatalog(query = "") {
+      const books = await callApi("get_books", query);
+      const tbody = document.getElementById("books-tbody");
+      tbody.innerHTML = "";
+
+      if (!books || books.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No books found matching your search.</td></tr>`;
+        return;
+      }
+
+      books.forEach((b) => {
+        const tr = document.createElement("tr");
+        if (selectedBookId === b.id) tr.classList.add("selected");
+
+        tr.onclick = () => {
+          document.querySelectorAll("#books-tbody tr").forEach((r) => r.classList.remove("selected"));
+          tr.classList.add("selected");
+          selectedBookId = b.id;
+        };
+
+        const isAvailable = b.copies > 0;
+        const copiesBadge = isAvailable
+          ? `<span class="badge badge-stock">${b.copies} available</span>`
+          : `<span class="badge badge-out">Out of stock (0)</span>`;
+
+        tr.innerHTML = `
+          <td style="font-weight: bold; color: var(--text-muted);">${b.id}</td>
+          <td style="font-weight: 600;">${b.title}</td>
+          <td>${b.author}</td>
+          <td><span class="badge" style="background: #f1f5f9; color: #334155;">${b.category}</span></td>
+          <td><span class="badge badge-shelf">${b.shelf || "Main Shelf"}</span></td>
+          <td style="text-align: center;">${copiesBadge}</td>
+          <td style="text-align: right;">
+            ${isAvailable 
+              ? `<button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="event.stopPropagation(); borrowBook(${b.id})">Request Borrow</button>`
+              : `<button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.78rem;" onclick="event.stopPropagation(); reserveBook(${b.id})">Reserve</button>`
+            }
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    let isBorrowing = false;
+    async function borrowBook(bookId) {
+      if (isBorrowing) return;
+      isBorrowing = true;
+      try {
+        const res = await callApi("borrow_book", bookId);
+        if (res && res.success) {
+          showToast(res.message, "success");
+          await loadCatalog(document.getElementById("search-input").value);
+          await updateActiveLoansCount();
+        } else {
+          showToast(res ? res.message : "Borrow request failed", "error");
+        }
+      } finally {
+        isBorrowing = false;
+      }
+    }
+
+    async function reserveBook(bookId) {
+      const res = await callApi("reserve_book", bookId);
+      if (res && res.success) {
+        showToast(res.message, "success");
+      } else {
+        showToast(res ? res.message : "Reservation failed", "error");
+      }
+    }
+
+    async function loadStudentLoans() {
+      const loans = await callApi("get_my_borrow_records");
+      const tbody = document.getElementById("loans-tbody");
+      tbody.innerHTML = "";
+
+      if (!loans || loans.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">You currently have no active loans or pending requests.</td></tr>`;
+        return;
+      }
+
+      loans.forEach((l) => {
+        const tr = document.createElement("tr");
+        let statusBadge = "";
+        let dueDateText = l.due_date || "<span style='color: #94a3b8; font-style: italic;'>Awaiting Approval</span>";
+        let actionContent = "";
+        let requestDateText = l.request_date || l.borrow_date || "N/A";
+
+        if (l.status === "Pending Approval") {
+          statusBadge = `<span class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a;">Pending Librarian Approval</span>`;
+          actionContent = `<span style="font-size: 0.8rem; color: #d97706; font-weight: 600;">Awaiting Review</span>`;
+        } else if (l.status === "Borrowed") {
+          statusBadge = `<span class="badge badge-status-borrowed">Active Loan</span>`;
+          actionContent = `<button class="btn btn-teal" style="padding: 4px 10px; font-size: 0.78rem;" onclick="returnBook(${l.record_id})">Return Book</button>`;
+        } else if (l.status === "Returned") {
+          statusBadge = `<span class="badge badge-status-returned">Returned</span>`;
+          actionContent = `<span style="font-size: 0.8rem; color: var(--text-muted);">Returned on ${l.return_date}</span>`;
+        } else if (l.status === "Rejected") {
+          statusBadge = `<span class="badge badge-status-overdue">Request Rejected</span>`;
+          actionContent = `<span style="font-size: 0.8rem; color: #dc2626;">Declined by Librarian</span>`;
+        }
+
+        const fineText = (l.fine && l.fine > 0) 
+          ? `<span style="color: #dc2626; font-weight: bold;">₱${l.fine.toFixed(2)}</span>` 
+          : `<span style="color: #10b981;">₱0.00</span>`;
+
+        tr.innerHTML = `
+          <td style="font-weight: 600;">${l.book_title}</td>
+          <td>${requestDateText}</td>
+          <td>${dueDateText}</td>
+          <td>${statusBadge}</td>
+          <td>${fineText}</td>
+          <td>${actionContent}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      await updateActiveLoansCount();
+    }
+
+    let isReturning = false;
+    async function returnBook(recordId) {
+      if (isReturning) return;
+      isReturning = true;
+      try {
+        const res = await callApi("return_book", recordId);
+        if (res && res.success) {
+          showToast(res.message, res.is_overdue ? "error" : "success");
+          await loadStudentLoans();
+          await updateActiveLoansCount();
+        } else {
+          showToast(res ? res.message : "Return failed", "error");
+        }
+      } finally {
+        isReturning = false;
+      }
+    }
+
+    async function loadStudentHolds() {
+      const allReservations = await callApi("get_all_reservations");
+      const myReservations = (allReservations || []).filter((r) => r.username === currentUser.username);
+      const tbody = document.getElementById("student-holds-tbody");
+      tbody.innerHTML = "";
+
+      if (myReservations.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">No active holds or reservations found.</td></tr>`;
+        return;
+      }
+
+      myReservations.forEach((r) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td style="font-weight: bold; color: var(--text-muted);">#${r.id}</td>
+          <td style="font-weight: 600;">${r.book_title}</td>
+          <td>${r.date_requested}</td>
+          <td><span class="badge badge-status-pending">${r.status}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Explicitly bind to global window scope
+    window.borrowBook = borrowBook;
+    window.reserveBook = reserveBook;
+    window.returnBook = returnBook;
+  </script>
+</body>
+</html>
