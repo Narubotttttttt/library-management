@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Portal - School Library</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="sidebar-title">School Library</div>
+          <div class="sidebar-subtitle">Faculty & Teacher Portal</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-label">Academic Services</div>
+
+        <button class="nav-item active" data-target="section-catalog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+          Browse Catalog
+        </button>
+
+        <button class="nav-item" data-target="section-loans">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          Instructional Loans
+          <span class="nav-badge" id="badge-active-loans" style="background: #6366f1;">0</span>
+        </button>
+
+        <div class="sidebar-section-label">Curriculum Support</div>
+
+        <button class="nav-item" data-target="section-recommendations">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          Course Reading Lists
+        </button>
+
+        <button class="nav-item" data-target="section-acquisitions">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+          Book Acquisitions
+        </button>
+      </nav>
+
+      <!-- Sidebar User Footer -->
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="user-avatar-sm" id="user-avatar" style="background: #6366f1;">T</div>
+          <div class="user-details">
+            <div class="user-name-text" id="user-name">Loading...</div>
+            <div class="user-role-text" id="user-course">Faculty Member</div>
+          </div>
+        </div>
+        <button class="btn-sidebar-logout" id="btn-logout">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEWPORT -->
+    <main class="main-viewport">
+      <!-- Dynamic Topbar -->
+      <header class="topbar">
+        <div>
+          <div class="topbar-title" id="page-title">Library Catalog</div>
+          <div class="topbar-subtitle" id="page-subtitle">Browse collection, borrow teaching references, and recommend books for syllabi</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <span class="badge badge-faculty" style="font-size: 0.8rem; padding: 6px 12px;">
+            Faculty Loan Privilege: 14 Days &bull; Max 5 Books &bull; Fine Exempt
+          </span>
+        </div>
+      </header>
+
+      <!-- SECTION 1: BROWSE CATALOG -->
+      <section id="section-catalog" class="page-section">
+        <div class="toolbar">
+          <div class="search-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="search-input" placeholder="Search by title, author, category, shelf...">
+          </div>
+
+          <div class="toolbar-actions">
+            <button class="btn btn-outline" id="btn-reset-search">Reset Filter</button>
+            <button class="btn btn-primary" id="btn-borrow-selected">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"></path>
+              </svg>
+              Borrow Selected
+            </button>
+            <button class="btn btn-outline" id="btn-recommend-selected">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              Recommend to Course
+            </button>
+          </div>
+        </div>
+
+        <div class="table-card" style="flex: 1;">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 50px;">ID</th>
+                  <th>Book Title & Recommended Syllabus</th>
+                  <th>Author</th>
+                  <th>Category</th>
+                  <th>Shelf Location</th>
+                  <th style="text-align: center;">Copies Available</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="books-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: MY INSTRUCTIONAL LOANS -->
+      <section id="section-loans" class="page-section" style="display: none;">
+        <div class="toolbar">
+          <div>
+            <div style="font-weight: 700; color: #1e293b;">Active Faculty Instructional Borrowings</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+              Teacher loans are active for 14 days for curriculum research. No overdue fines are charged on instructional loans.
+            </div>
+          </div>
+          <div class="badge badge-faculty" style="padding: 6px 14px; font-size: 0.85rem;">
+            Faculty Borrow Limit: <strong>5 Active Books</strong>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Book Title</th>
+                  <th>Request Date</th>
+                  <th>Return Deadline</th>
+                  <th>Status</th>
+                  <th>Fine Policy</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="loans-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: COURSE READING LISTS -->
+      <section id="section-recommendations" class="page-section" style="display: none;">
+        <div class="toolbar">
+          <div>
+            <div style="font-weight: 700; color: #1e293b;">Course Reading Lists & Syllabus Recommendations</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+              Books tagged here appear highlighted with recommendations in the Student Catalog.
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btn-add-rec-dialog">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            + Add Recommendation
+          </button>
+        </div>
+
+        <div class="table-card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 50px;">ID</th>
+                  <th>Recommended Book</th>
+                  <th>Subject / Course Level</th>
+                  <th>Curriculum Notes / Syllabus Instructions</th>
+                  <th>Date Added</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="recommendations-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: BOOK ACQUISITION REQUESTS -->
+      <section id="section-acquisitions" class="page-section" style="display: none;">
+        <div class="toolbar">
+          <div>
+            <div style="font-weight: 700; color: #1e293b;">Faculty Book Purchase / Acquisition Requests</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+              Request new books not currently in the catalog. The Librarian will review and acquire approved references.
+            </div>
+          </div>
+          <button class="btn btn-teal" id="btn-add-acq-dialog">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            + Request New Book Purchase
+          </button>
+        </div>
+
+        <div class="table-card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 50px;">Req #</th>
+                  <th>Book Title</th>
+                  <th>Author</th>
+                  <th>Category</th>
+                  <th>Educational Need / Syllabus Justification</th>
+                  <th>Request Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="acquisitions-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL: RECOMMEND BOOK TO COURSE -->
+  <div id="modal-recommend" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">Recommend Book for Course / Syllabus</div>
+        <button class="modal-close" onclick="closeModal('modal-recommend')">&times;</button>
+      </div>
+      <form id="form-recommend">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="rec-book-select">Select Catalog Book *</label>
+            <select id="rec-book-select" class="form-input" required></select>
+          </div>
+          <div class="form-group">
+            <label for="rec-course">Target Subject / Course *</label>
+            <input type="text" id="rec-course" class="form-input" placeholder="e.g. BSIT 2nd Year - Data Structures" required>
+          </div>
+          <div class="form-group">
+            <label for="rec-notes">Curriculum Notes for Students *</label>
+            <textarea id="rec-notes" class="form-input" style="height: 80px; resize: none;" placeholder="e.g. Chapter 4 is required reading for Midterm Project. Focus on tree algorithms." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-recommend')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Recommendation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NEW BOOK ACQUISITION REQUEST -->
+  <div id="modal-acquisition" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">Request Library Book Acquisition</div>
+        <button class="modal-close" onclick="closeModal('modal-acquisition')">&times;</button>
+      </div>
+      <form id="form-acquisition">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="acq-title">Book Title *</label>
+            <input type="text" id="acq-title" class="form-input" placeholder="e.g. Clean Code: A Handbook of Agile Software Craftsmanship" required>
+          </div>
+          <div class="form-group">
+            <label for="acq-author">Author *</label>
+            <input type="text" id="acq-author" class="form-input" placeholder="e.g. Robert C. Martin" required>
+          </div>
+          <div class="form-group">
+            <label for="acq-category">Category / Subject Area</label>
+            <input type="text" id="acq-category" class="form-input" placeholder="e.g. Software Engineering / Computer Science">
+          </div>
+          <div class="form-group">
+            <label for="acq-reason">Educational Need / Syllabus Justification *</label>
+            <textarea id="acq-reason" class="form-input" style="height: 80px; resize: none;" placeholder="e.g. Required reference textbook for BSIT 3rd Year Capstone Software Architecture module." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-acquisition')">Cancel</button>
+          <button type="submit" class="btn btn-teal">Submit to Librarian</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script>
+    // --- Helper Utilities ---
+    function waitForApi() {
+      return new Promise((resolve) => {
+        if (window.pywebview && window.pywebview.api) {
+          resolve(window.pywebview.api);
+          return;
+        }
+        const onReady = () => {
+          window.removeEventListener("pywebviewready", onReady);
+          resolve(window.pywebview.api);
+        };
+        window.addEventListener("pywebviewready", onReady);
+        const interval = setInterval(() => {
+          if (window.pywebview && window.pywebview.api) {
+            clearInterval(interval);
+            window.removeEventListener("pywebviewready", onReady);
+            resolve(window.pywebview.api);
+          }
+        }, 50);
+      });
+    }
+
+    async function callApi(methodName, ...args) {
+      try {
+        const api = await waitForApi();
+        if (typeof api[methodName] === "function") {
+          return await api[methodName](...args);
+        }
+        return { success: false, message: `Method ${methodName} not found` };
+      } catch (err) {
+        return { success: false, message: String(err) };
+      }
+    }
+
+    function showToast(message, type = "info") {
+      let container = document.getElementById("toast-container");
+      if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        container.className = "toast-container";
+        document.body.appendChild(container);
+      }
+      const toast = document.createElement("div");
+      toast.className = `toast toast-${type}`;
+      let iconSvg = "";
+      if (type === "success") {
+        iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>`;
+      } else if (type === "error") {
+        iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+      } else {
+        iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+      }
+      toast.innerHTML = `${iconSvg}<div class="toast-msg">${String(message).replace(/\n/g, '<br>')}</div>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(50px)";
+        toast.style.transition = "all 0.3s ease";
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "flex";
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "none";
+    }
+
+    // --- State Variables ---
+    let currentUser = null;
+    let selectedBookId = null;
+    let isProcessing = false;
+
+    const navMeta = {
+      "section-catalog": { title: "Library Catalog", subtitle: "Browse collection, borrow teaching references, and recommend books for syllabi" },
+      "section-loans": { title: "Instructional Loans", subtitle: "Faculty 14-day borrowing history, return deadlines, and zero-penalty loan status" },
+      "section-recommendations": { title: "Course Reading Lists", subtitle: "Manage recommended textbooks and syllabus reference readings for students" },
+      "section-acquisitions": { title: "Book Acquisitions", subtitle: "Submit and monitor new book purchase recommendations for library acquisition" }
+    };
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      currentUser = await callApi("get_current_user");
+      if (!currentUser || currentUser.role !== "teacher") {
+        window.location.href = "login.html";
+        return;
+      }
+
+      document.getElementById("user-name").textContent = currentUser.name;
+      document.getElementById("user-course").textContent = currentUser.department || currentUser.course || "Faculty Member";
+
+      await loadCatalog();
+      await updateActiveLoansCount();
+
+      // Navigation Click Handlers
+      document.querySelectorAll(".sidebar .nav-item").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          document.querySelectorAll(".sidebar .nav-item").forEach((b) => b.classList.remove("active"));
+          document.querySelectorAll(".page-section").forEach((s) => (s.style.display = "none"));
+
+          btn.classList.add("active");
+          const targetSection = btn.getAttribute("data-target");
+          const secEl = document.getElementById(targetSection);
+          if (secEl) secEl.style.display = "flex";
+
+          if (navMeta[targetSection]) {
+            document.getElementById("page-title").textContent = navMeta[targetSection].title;
+            document.getElementById("page-subtitle").textContent = navMeta[targetSection].subtitle;
+          }
+
+          if (targetSection === "section-catalog") await loadCatalog();
+          if (targetSection === "section-loans") await loadTeacherLoans();
+          if (targetSection === "section-recommendations") await loadRecommendations();
+          if (targetSection === "section-acquisitions") await loadAcquisitions();
+        });
+      });
+
+      document.getElementById("btn-logout").addEventListener("click", async () => {
+        await callApi("logout");
+        window.location.href = "login.html";
+      });
+
+      // Search Handler
+      document.getElementById("search-input").addEventListener("input", (e) => {
+        loadCatalog(e.target.value);
+      });
+
+      document.getElementById("btn-reset-search").addEventListener("click", () => {
+        document.getElementById("search-input").value = "";
+        loadCatalog();
+      });
+
+      document.getElementById("btn-borrow-selected").addEventListener("click", () => {
+        if (!selectedBookId) {
+          showToast("Please select a book from the catalog first.", "info");
+          return;
+        }
+        borrowBook(selectedBookId);
+      });
+
+      document.getElementById("btn-recommend-selected").addEventListener("click", async () => {
+        await populateBookSelect(selectedBookId);
+        openModal("modal-recommend");
+      });
+
+      document.getElementById("btn-add-rec-dialog").addEventListener("click", async () => {
+        await populateBookSelect();
+        openModal("modal-recommend");
+      });
+
+      document.getElementById("btn-add-acq-dialog").addEventListener("click", () => {
+        openModal("modal-acquisition");
+      });
+
+      // Submit Recommendation Form
+      document.getElementById("form-recommend").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const bookId = parseInt(document.getElementById("rec-book-select").value);
+        const course = document.getElementById("rec-course").value.trim();
+        const notes = document.getElementById("rec-notes").value.trim();
+
+        const res = await callApi("recommend_book", bookId, course, notes);
+        if (res && res.success) {
+          showToast(res.message, "success");
+          closeModal("modal-recommend");
+          document.getElementById("form-recommend").reset();
+          await loadCatalog();
+          await loadRecommendations();
+        } else {
+          showToast(res ? res.message : "Failed to save recommendation", "error");
+        }
+      });
+
+      // Submit Acquisition Form
+      document.getElementById("form-acquisition").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const title = document.getElementById("acq-title").value.trim();
+        const author = document.getElementById("acq-author").value.trim();
+        const category = document.getElementById("acq-category").value.trim();
+        const reason = document.getElementById("acq-reason").value.trim();
+
+        const res = await callApi("request_acquisition", title, author, category, reason);
+        if (res && res.success) {
+          showToast(res.message, "success");
+          closeModal("modal-acquisition");
+          document.getElementById("form-acquisition").reset();
+          await loadAcquisitions();
+        } else {
+          showToast(res ? res.message : "Failed to submit request", "error");
+        }
+      });
+    });
+
+    async function populateBookSelect(defaultId = null) {
+      const books = await callApi("get_books");
+      const select = document.getElementById("rec-book-select");
+      select.innerHTML = (books || []).map((b) => 
+        `<option value="${b.id}" ${defaultId === b.id ? 'selected' : ''}>${b.title} (${b.author})</option>`
+      ).join("");
+    }
+
+    async function updateActiveLoansCount() {
+      const loans = await callApi("get_my_borrow_records");
+      const activeCount = (loans || []).filter((l) => l.status === "Borrowed" || l.status === "Pending Approval").length;
+      const badge = document.getElementById("badge-active-loans");
+      if (badge) badge.textContent = activeCount;
+    }
+
+    async function loadCatalog(query = "") {
+      const books = await callApi("get_books", query);
+      const tbody = document.getElementById("books-tbody");
+      tbody.innerHTML = "";
+
+      if (!books || books.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No matching books found in catalog.</td></tr>`;
+        return;
+      }
+
+      books.forEach((b) => {
+        const tr = document.createElement("tr");
+        if (selectedBookId === b.id) tr.classList.add("selected");
+
+        tr.onclick = () => {
+          document.querySelectorAll("#books-tbody tr").forEach((r) => r.classList.remove("selected"));
+          tr.classList.add("selected");
+          selectedBookId = b.id;
+        };
+
+        const isAvailable = b.copies > 0;
+        const copiesBadge = isAvailable
+          ? `<span class="badge badge-stock">${b.copies} available</span>`
+          : `<span class="badge badge-out">Out of stock (0)</span>`;
+
+        let recBadges = "";
+        if (b.recommendations && b.recommendations.length > 0) {
+          recBadges = b.recommendations.map(r => 
+            `<div style="margin-top: 4px;"><span class="badge badge-recommended" title="${r.notes}">★ ${r.teacher_name} &bull; ${r.course}</span></div>`
+          ).join("");
+        }
+
+        tr.innerHTML = `
+          <td style="font-weight: bold; color: var(--text-muted);">${b.id}</td>
+          <td>
+            <div style="font-weight: 600;">${b.title}</div>
+            ${recBadges}
+          </td>
+          <td>${b.author}</td>
+          <td><span class="badge" style="background: #f1f5f9; color: #334155;">${b.category}</span></td>
+          <td><span class="badge badge-shelf">${b.shelf || "Main Shelf"}</span></td>
+          <td style="text-align: center;">${copiesBadge}</td>
+          <td style="text-align: right;">
+            <div style="display: inline-flex; gap: 6px;">
+              ${isAvailable 
+                ? `<button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="event.stopPropagation(); borrowBook(${b.id})">Borrow (14 Days)</button>`
+                : `<button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.78rem;" onclick="event.stopPropagation(); reserveBook(${b.id})">Reserve</button>`
+              }
+              <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.78rem;" onclick="event.stopPropagation(); openRecommendDialog(${b.id})">★ Recommend</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function openRecommendDialog(bookId) {
+      await populateBookSelect(bookId);
+      openModal("modal-recommend");
+    }
+
+    async function borrowBook(bookId) {
+      if (isProcessing) return;
+      isProcessing = true;
+      try {
+        const res = await callApi("borrow_book", bookId);
+        if (res && res.success) {
+          showToast(res.message, "success");
+          await loadCatalog(document.getElementById("search-input").value);
+          await updateActiveLoansCount();
+        } else {
+          showToast(res ? res.message : "Borrow request failed", "error");
+        }
+      } finally {
+        isProcessing = false;
+      }
+    }
+
+    async function reserveBook(bookId) {
+      const res = await callApi("reserve_book", bookId);
+      if (res && res.success) {
+        showToast(res.message, "success");
+      } else {
+        showToast(res ? res.message : "Reservation failed", "error");
+      }
+    }
+
+    async function loadTeacherLoans() {
+      const loans = await callApi("get_my_borrow_records");
+      const tbody = document.getElementById("loans-tbody");
+      tbody.innerHTML = "";
+
+      if (!loans || loans.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">You currently have no instructional loans or pending requests.</td></tr>`;
+        return;
+      }
+
+      loans.forEach((l) => {
+        const tr = document.createElement("tr");
+        let statusBadge = "";
+        let dueDateText = l.due_date || "<span style='color: #94a3b8; font-style: italic;'>Awaiting Librarian Approval</span>";
+        let actionContent = "";
+        let requestDateText = l.request_date || l.borrow_date || "N/A";
+
+        if (l.status === "Pending Approval") {
+          statusBadge = `<span class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a;">Pending Librarian Approval</span>`;
+          actionContent = `<span style="font-size: 0.8rem; color: #d97706; font-weight: 600;">Awaiting Review</span>`;
+        } else if (l.status === "Borrowed") {
+          statusBadge = `<span class="badge badge-faculty">Active 14-Day Loan</span>`;
+          actionContent = `<button class="btn btn-teal" style="padding: 4px 10px; font-size: 0.78rem;" onclick="returnBook(${l.record_id})">Return Book</button>`;
+        } else if (l.status === "Returned") {
+          statusBadge = `<span class="badge badge-status-returned">Returned</span>`;
+          actionContent = `<span style="font-size: 0.8rem; color: var(--text-muted);">Returned on ${l.return_date}</span>`;
+        } else if (l.status === "Rejected") {
+          statusBadge = `<span class="badge badge-status-overdue">Request Rejected</span>`;
+          actionContent = `<span style="font-size: 0.8rem; color: #dc2626;">Declined by Librarian</span>`;
+        }
+
+        tr.innerHTML = `
+          <td style="font-weight: 600;">${l.book_title}</td>
+          <td>${requestDateText}</td>
+          <td>${dueDateText}</td>
+          <td>${statusBadge}</td>
+          <td><span class="badge" style="background: #f5f3ff; color: #6d28d9;">Faculty Fine-Exempt</span></td>
+          <td>${actionContent}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      await updateActiveLoansCount();
+    }
+
+    async function returnBook(recordId) {
+      if (isProcessing) return;
+      isProcessing = true;
+      try {
+        const res = await callApi("return_book", recordId);
+        if (res && res.success) {
+          showToast(res.message, "success");
+          await loadTeacherLoans();
+          await updateActiveLoansCount();
+        } else {
+          showToast(res ? res.message : "Return failed", "error");
+        }
+      } finally {
+        isProcessing = false;
+      }
+    }
+
+    async function loadRecommendations() {
+      const recs = await callApi("get_my_recommendations");
+      const tbody = document.getElementById("recommendations-tbody");
+      tbody.innerHTML = "";
+
+      if (!recs || recs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">You have not added any course book recommendations yet.</td></tr>`;
+        return;
+      }
+
+      recs.forEach((r) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td style="font-weight: bold; color: var(--text-muted);">#${r.id}</td>
+          <td style="font-weight: 600;">${r.book_title}</td>
+          <td><span class="badge badge-recommended">${r.course}</span></td>
+          <td style="font-size: 0.85rem; color: #334155;">${r.notes}</td>
+          <td>${r.date_added}</td>
+          <td style="text-align: right;">
+            <button class="btn btn-danger-outline" style="padding: 3px 8px; font-size: 0.75rem;" onclick="removeRecommendation(${r.id})">Remove</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function removeRecommendation(recId) {
+      const res = await callApi("remove_recommendation", recId);
+      if (res && res.success) {
+        showToast(res.message, "success");
+        await loadRecommendations();
+        await loadCatalog();
+      } else {
+        showToast(res ? res.message : "Failed to remove recommendation", "error");
+      }
+    }
+
+    async function loadAcquisitions() {
+      const acqs = await callApi("get_my_acquisitions");
+      const tbody = document.getElementById("acquisitions-tbody");
+      tbody.innerHTML = "";
+
+      if (!acqs || acqs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No book purchase requests submitted yet.</td></tr>`;
+        return;
+      }
+
+      acqs.forEach((a) => {
+        const tr = document.createElement("tr");
+        let statusBadge = "";
+        if (a.status === "Pending Review") {
+          statusBadge = `<span class="badge" style="background: #fef3c7; color: #b45309;">Pending Review</span>`;
+        } else if (a.status === "Approved & Added") {
+          statusBadge = `<span class="badge badge-stock">Approved &amp; Added to Catalog</span>`;
+        } else {
+          statusBadge = `<span class="badge badge-out">${a.status}</span>`;
+        }
+
+        tr.innerHTML = `
+          <td style="font-weight: bold; color: var(--text-muted);">#${a.id}</td>
+          <td style="font-weight: 600;">${a.title}</td>
+          <td>${a.author}</td>
+          <td><span class="badge" style="background: #f1f5f9; color: #475569;">${a.category}</span></td>
+          <td style="font-size: 0.85rem; color: #334155;">${a.reason}</td>
+          <td>${a.request_date}</td>
+          <td>${statusBadge}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Global bindings for inline onclicks
+    window.borrowBook = borrowBook;
+    window.reserveBook = reserveBook;
+    window.returnBook = returnBook;
+    window.openRecommendDialog = openRecommendDialog;
+    window.removeRecommendation = removeRecommendation;
+  </script>
+</body>
+</html>
+

@@ -84,6 +84,15 @@
           </svg>
           Reservations List
         </button>
+
+        <button class="nav-item" data-target="section-acquisitions">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+          Faculty Acquisitions
+          <span class="nav-badge" id="badge-pending-acquisitions" style="background: #8b5cf6;">0</span>
+        </button>
       </nav>
 
       <!-- Sidebar User Footer -->
@@ -359,7 +368,7 @@
       <!-- SECTION 6: RESERVATIONS LIST -->
       <section id="section-reservations" class="page-section" style="display: none;">
         <div class="toolbar">
-          <div style="font-weight: 700; color: #1e293b;">Book Holds & Waitlist Requests</div>
+          <div style="font-weight: 700; color: #1e293b;">Book Holds &amp; Waitlist Requests</div>
         </div>
 
         <div class="table-card" style="flex: 1;">
@@ -380,9 +389,71 @@
           </div>
         </div>
       </section>
+
+      <!-- SECTION 7: FACULTY ACQUISITIONS -->
+      <section id="section-acquisitions" class="page-section" style="display: none;">
+        <div class="toolbar">
+          <div>
+            <div style="font-weight: 700; color: #1e293b;">Faculty Book Purchase / Acquisition Recommendations</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+              Review textbooks requested by teachers. Approving automatically adds the book into inventory with assigned shelf and stock.
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card" style="flex: 1;">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 50px;">Req #</th>
+                  <th>Faculty Member</th>
+                  <th>Department</th>
+                  <th>Requested Book</th>
+                  <th>Author</th>
+                  <th>Category</th>
+                  <th>Curriculum Justification</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Review Action</th>
+                </tr>
+              </thead>
+              <tbody id="acquisitions-admin-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </main>
 
     <!-- MODALS -->
+
+    <!-- Modal: Approve Acquisition and Add to Catalog -->
+    <div id="modal-approve-acq" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <div class="modal-title">Approve &amp; Add Book to Catalog</div>
+          <button class="modal-close" onclick="closeModal('modal-approve-acq')">&times;</button>
+        </div>
+        <form id="form-approve-acq">
+          <div class="modal-body">
+            <input type="hidden" id="approve-acq-id">
+            <div id="approve-acq-info" style="font-size: 0.88rem; color: #334155; margin-bottom: 12px; background: #f8fafc; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);"></div>
+            <div class="form-group">
+              <label for="acq-shelf">Assign Shelf Location *</label>
+              <input type="text" id="acq-shelf" class="form-input" value="Shelf A-1" required>
+            </div>
+            <div class="form-group">
+              <label for="acq-copies">Number of Copies to Acquire *</label>
+              <input type="number" id="acq-copies" class="form-input" value="3" min="1" max="50" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="closeModal('modal-approve-acq')">Cancel</button>
+            <button type="submit" class="btn btn-teal">Approve &amp; Add to Inventory</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- Modal: Add New Book -->
     <div id="modal-add-book" class="modal-backdrop" style="display: none;">
@@ -588,11 +659,12 @@
 
     const adminNavMeta = {
       "section-dashboard": { title: "Dashboard Overview", subtitle: "Real-time metrics, circulation analytics, and catalog health" },
-      "section-requests": { title: "Student Borrow Requests", subtitle: "Review, approve, or reject book borrow requests submitted by students" },
+      "section-requests": { title: "Borrow Requests Queue", subtitle: "Review and approve book loan requests from students and faculty" },
       "section-inventory": { title: "Book Inventory Management", subtitle: "Add new acquisitions, track stock copies, and manage shelves" },
       "section-circulation": { title: "Circulation Desk & Loans", subtitle: "Manage active issued loans, return dates, and penalty fines" },
       "section-students": { title: "Student Directory", subtitle: "Roster of all registered students, courses, and contact information" },
-      "section-reservations": { title: "Book Reservations & Holds", subtitle: "Queue of student hold requests for out-of-stock titles" }
+      "section-reservations": { title: "Book Reservations & Holds", subtitle: "Queue of student hold requests for out-of-stock titles" },
+      "section-acquisitions": { title: "Faculty Book Acquisitions", subtitle: "Review, approve, and add curriculum textbooks requested by teachers" }
     };
 
     document.addEventListener("DOMContentLoaded", async () => {
@@ -628,7 +700,26 @@
           if (targetSection === "section-circulation") await loadCirculation();
           if (targetSection === "section-students") await loadStudents();
           if (targetSection === "section-reservations") await loadReservations();
+          if (targetSection === "section-acquisitions") await loadAcquisitionsAdmin();
         });
+      });
+
+      document.getElementById("form-approve-acq").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const acqId = parseInt(document.getElementById("approve-acq-id").value);
+        const shelf = document.getElementById("acq-shelf").value.trim();
+        const copies = parseInt(document.getElementById("acq-copies").value) || 3;
+
+        const res = await callApi("approve_acquisition_request", acqId, shelf, copies);
+        if (res && res.success) {
+          showToast(res.message, "success");
+          closeModal("modal-approve-acq");
+          await refreshDashboard();
+          await loadAcquisitionsAdmin();
+          await loadInventory();
+        } else {
+          showToast(res ? res.message : "Approval failed", "error");
+        }
       });
 
       document.getElementById("btn-admin-logout").addEventListener("click", async () => {
@@ -767,6 +858,9 @@
 
         const countBadge = document.getElementById("dashboard-requests-count");
         if (countBadge) countBadge.textContent = `${metrics.pending_requests || 0} pending`;
+
+        const acqBadge = document.getElementById("badge-pending-acquisitions");
+        if (acqBadge) acqBadge.textContent = metrics.pending_acquisitions || 0;
       }
       
       // Load pending requests table on dashboard overview
@@ -822,12 +916,17 @@
         const book = (books || []).find((b) => b.id === r.book_id);
         const copies = book ? book.copies : 0;
         const recId = r.record_id || r.id;
+        const isTeacher = r.role === "teacher";
+        const roleBadge = isTeacher 
+          ? `<span class="badge badge-faculty" style="font-size: 0.7rem; margin-left: 6px;">Faculty (14d)</span>` 
+          : `<span class="badge badge-student" style="font-size: 0.7rem; margin-left: 6px;">Student (7d)</span>`;
+
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td style="font-weight: bold; color: var(--text-muted);">#${recId}</td>
           <td style="font-family: monospace; font-weight: bold;">${r.username}</td>
-          <td style="font-weight: 600;">${r.name}</td>
-          <td>${r.course || 'Student'}</td>
+          <td><span style="font-weight: 600;">${r.name}</span> ${roleBadge}</td>
+          <td>${r.course || (isTeacher ? 'Faculty' : 'Student')}</td>
           <td style="font-weight: 600;">${r.book_title}</td>
           <td>${r.request_date || 'Today'}</td>
           <td><span class="badge ${copies > 0 ? 'badge-stock' : 'badge-out'}">${copies} copies available</span></td>
@@ -1067,6 +1166,82 @@
       }
     }
     window.adminProcessReturn = adminProcessReturn;
+
+    // --- Faculty Acquisition Requests Management ---
+    async function loadAcquisitionsAdmin() {
+      const acqs = await callApi("get_all_acquisitions");
+      const tbody = document.getElementById("acquisitions-admin-tbody");
+      tbody.innerHTML = "";
+
+      if (!acqs || acqs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 28px;">No faculty book acquisition requests found.</td></tr>`;
+        return;
+      }
+
+      acqs.forEach((a) => {
+        const tr = document.createElement("tr");
+        let statusBadge = "";
+        let actionContent = "";
+
+        if (a.status === "Pending Review") {
+          statusBadge = `<span class="badge" style="background: #fef3c7; color: #b45309;">Pending Review</span>`;
+          actionContent = `
+            <button class="btn btn-success" style="padding: 4px 10px; font-size: 0.78rem;" onclick="openApproveAcquisitionDialog(${a.id})">✓ Approve &amp; Stock</button>
+            <button class="btn btn-danger-outline" style="padding: 4px 10px; font-size: 0.78rem; margin-left: 4px;" onclick="rejectAcquisition(${a.id})">✗ Decline</button>
+          `;
+        } else if (a.status === "Approved & Added") {
+          statusBadge = `<span class="badge badge-stock">Approved &amp; Added</span>`;
+          actionContent = `<span style="font-size: 0.8rem; color: #15803d; font-weight: 600;">In Inventory</span>`;
+        } else {
+          statusBadge = `<span class="badge badge-out">${a.status}</span>`;
+          actionContent = `<span style="font-size: 0.8rem; color: var(--text-muted);">Declined</span>`;
+        }
+
+        tr.innerHTML = `
+          <td style="font-weight: bold; color: var(--text-muted);">#${a.id}</td>
+          <td style="font-weight: 600;">${a.teacher_name}</td>
+          <td>${a.department}</td>
+          <td style="font-weight: 600;">${a.title}</td>
+          <td>${a.author}</td>
+          <td><span class="badge" style="background: #f1f5f9; color: #475569;">${a.category}</span></td>
+          <td style="font-size: 0.85rem; color: #334155;">${a.reason}</td>
+          <td>${a.request_date}</td>
+          <td>${statusBadge}</td>
+          <td style="text-align: right;">${actionContent}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function openApproveAcquisitionDialog(acqId) {
+      const acqs = await callApi("get_all_acquisitions");
+      const acq = (acqs || []).find((a) => a.id === acqId);
+      if (!acq) return;
+
+      document.getElementById("approve-acq-id").value = acq.id;
+      document.getElementById("approve-acq-info").innerHTML = `
+        <strong>Title:</strong> ${acq.title}<br>
+        <strong>Author:</strong> ${acq.author} &bull; <strong>Category:</strong> ${acq.category}<br>
+        <strong>Requested by:</strong> ${acq.teacher_name} (${acq.department})<br>
+        <strong>Need:</strong> ${acq.reason}
+      `;
+      openModal("modal-approve-acq");
+    }
+
+    async function rejectAcquisition(acqId) {
+      const res = await callApi("reject_acquisition_request", acqId);
+      if (res && res.success) {
+        showToast(res.message, "info");
+        await refreshDashboard();
+        await loadAcquisitionsAdmin();
+      } else {
+        showToast(res ? res.message : "Decline failed", "error");
+      }
+    }
+
+    window.loadAcquisitionsAdmin = loadAcquisitionsAdmin;
+    window.openApproveAcquisitionDialog = openApproveAcquisitionDialog;
+    window.rejectAcquisition = rejectAcquisition;
   </script>
 </body>
 </html>

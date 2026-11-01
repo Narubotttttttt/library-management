@@ -33,8 +33,8 @@ class LibraryApi:
             return {"success": True, "user": safe_user}
         return {"success": False, "message": "Invalid Student ID/Username or Password."}
 
-    def register(self, name, student_id, password, email, course, contact):
-        success, msg = backend.register_student(name, student_id, password, email, course, contact)
+    def register(self, name, student_id, password, email, course, contact, role="student"):
+        success, msg = backend.register_user(name, student_id, password, email, course, contact, role)
         return {"success": success, "message": msg}
 
     def logout(self):
@@ -122,6 +122,53 @@ class LibraryApi:
 
     def get_all_reservations(self):
         return backend.get_all_reservations()
+
+    # Faculty Recommendations
+    def get_recommendations(self):
+        return backend.get_all_recommendations()
+
+    def get_my_recommendations(self):
+        if not self.current_user:
+            return []
+        return backend.get_teacher_recommendations(self.current_user["username"])
+
+    def recommend_book(self, book_id, course, notes):
+        if not self.current_user:
+            return {"success": False, "message": "Please log in first."}
+        success, msg = backend.recommend_book(self.current_user, int(book_id), course, notes)
+        return {"success": success, "message": msg}
+
+    def remove_recommendation(self, rec_id):
+        if not self.current_user:
+            return {"success": False, "message": "Please log in first."}
+        success, msg = backend.remove_recommendation(int(rec_id), self.current_user["username"])
+        return {"success": success, "message": msg}
+
+    # Faculty Book Acquisition Requests
+    def request_acquisition(self, title, author, category, reason):
+        if not self.current_user:
+            return {"success": False, "message": "Please log in first."}
+        success, msg = backend.request_book_acquisition(self.current_user, title, author, category, reason)
+        return {"success": success, "message": msg}
+
+    def get_my_acquisitions(self):
+        if not self.current_user:
+            return []
+        return backend.get_all_acquisitions(self.current_user["username"])
+
+    def get_all_acquisitions(self):
+        return backend.get_all_acquisitions()
+
+    def approve_acquisition_request(self, acq_id, shelf="Shelf A-1", copies=3):
+        success, msg = backend.approve_acquisition_request(int(acq_id), shelf, int(copies))
+        return {"success": success, "message": msg}
+
+    def reject_acquisition_request(self, acq_id, reason="Declined"):
+        success, msg = backend.reject_acquisition_request(int(acq_id), reason)
+        return {"success": success, "message": msg}
+
+    def get_all_faculty(self):
+        return backend.get_all_faculty()
 
 
 def main():

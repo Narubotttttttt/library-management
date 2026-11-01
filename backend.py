@@ -17,7 +17,7 @@ books = [
     {"id": 8, "title": "To Kill a Mockingbird", "author": "Harper Lee", "category": "Literature", "shelf": "Shelf D-1", "copies": 2}
 ]
 
-# Users list (includes admin and registered students)
+# Users list (includes admin, registered students, and faculty members)
 users = [
     {
         "username": "admin",
@@ -26,6 +26,16 @@ users = [
         "role": "librarian",
         "email": "alexanderromero@gmail.com",
         "contact": "09112223333"
+    },
+    {
+        "username": "teacher",
+        "password": "123",
+        "name": "Prof. Elena Santos",
+        "role": "teacher",
+        "email": "elena.santos@school.edu",
+        "course": "Faculty - Computer Studies",
+        "department": "College of Computer Studies",
+        "contact": "09171112233"
     },
     {
         "username": "20264926",
@@ -41,9 +51,20 @@ users = [
 borrow_records = []
 reservations = []
 
-FINE_RATE = 10.0   # 10 pesos fine per day overdue
-BORROW_DAYS = 7    # 7 days standard loan period
-MAX_BORROW_LIMIT = 3
+# Faculty & Student Loan Policies
+FINE_RATE = 10.0            # 10 pesos fine per day overdue for students
+BORROW_DAYS = 7             # 7 days standard student loan period
+MAX_BORROW_LIMIT = 3        # Maximum 3 books for students
+
+TEACHER_BORROW_DAYS = 14     # 14 days extended faculty loan period
+TEACHER_MAX_LIMIT = 5        # Maximum 5 books for faculty
+TEACHER_FINE_RATE = 0.0      # Faculty members are exempt from overdue fines
+
+# Faculty Course Reading List Recommendations
+recommendations = []
+
+# Faculty Book Purchase / Acquisition Requests
+acquisitions = []
 
 
 # ================= USER / AUTH LOGIC =================
@@ -56,37 +77,53 @@ def authenticate_user(username, password):
     return None
 
 
-def register_student(name, student_id, password, email, course, contact):
-    """Register a new student account."""
+def register_user(name, username, password, email, course, contact, role="student"):
+    """Register a new student or teacher account."""
     name = name.strip()
-    student_id = student_id.strip()
+    username = username.strip()
     password = password.strip()
     email = email.strip()
     course = course.strip()
     contact = contact.strip()
+    role = role.strip().lower() if role in ("student", "teacher") else "student"
 
-    if not name or not student_id or not password:
-        return False, "Name, Student ID, and Password are required!"
+    if not name or not username or not password:
+        id_label = "Faculty / Employee ID" if role == "teacher" else "Student ID"
+        return False, f"Name, {id_label}, and Password are required!"
 
     for u in users:
-        if u["username"].lower() == student_id.lower():
-            return False, "Student ID already registered!"
+        if u["username"].lower() == username.lower():
+            id_label = "Faculty ID" if role == "teacher" else "Student ID"
+            return False, f"{id_label} '{username}' is already registered!"
 
+    default_dept = "College Faculty" if role == "teacher" else "Student"
     users.append({
-        "username": student_id,
+        "username": username,
         "password": password,
         "name": name,
-        "role": "student",
-        "email": email if email else f"{student_id.lower()}@school.edu",
-        "course": course if course else "Student",
+        "role": role,
+        "email": email if email else f"{username.lower()}@school.edu",
+        "course": course if course else default_dept,
+        "department": course if role == "teacher" else "",
         "contact": contact
     })
-    return True, f"Registration successful!\nYou can now log in using Student ID '{student_id}'."
+    role_label = "Faculty Member" if role == "teacher" else "Student"
+    return True, f"Registration successful!\nYou can now log in as {role_label} using ID '{username}'."
+
+
+def register_student(name, student_id, password, email, course, contact, role="student"):
+    """Alias for register_user to maintain backward compatibility."""
+    return register_user(name, student_id, password, email, course, contact, role)
 
 
 def get_all_students():
     """Retrieve all registered student records."""
     return [u for u in users if u.get("role") == "student"]
+
+
+def get_all_faculty():
+    """Retrieve all registered faculty records."""
+    return [u for u in users if u.get("role") == "teacher"]
 
 
 def find_user_by_username(username):
@@ -96,9 +133,28 @@ def find_user_by_username(username):
 
 # ================= BOOK & INVENTORY LOGIC =================
 
+def _enrich_books_with_meta(book_list):
+    """Attach faculty course recommendation tags to books."""
+    rec_map = {}
+    for r in recommendations:
+        rec_map.setdefault(r["book_id"], []).append({
+            "id": r["id"],
+            "teacher_name": r["teacher_name"],
+            "course": r["course"],
+            "notes": r["notes"]
+        })
+    enriched = []
+    for b in book_list:
+        b_dict = dict(b)
+        b_dict["recommendations"] = rec_map.get(b["id"], [])
+        b_dict["is_recommended"] = len(b_dict["recommendations"]) > 0
+        enriched.append(b_dict)
+    return enriched
+
+
 def get_all_books():
-    """Return all books."""
-    return books
+    """Return all books with faculty recommendation metadata."""
+    return _enrich_books_with_meta(books)
 
 
 def find_book_by_id(book_id):
@@ -107,14 +163,15 @@ def find_book_by_id(book_id):
 
 
 def search_books(query):
-    """Filter books by title, author, or category."""
+    """Filter books by title, author, or category with recommendations."""
     q = query.strip().lower()
     if not q:
-        return books
-    return [
+        return _enrich_books_with_meta(books)
+    matched = [
         b for b in books
         if q in b["title"].lower() or q in b["author"].lower() or q in b["category"].lower() or q in b.get("shelf", "").lower()
     ]
+    return _enrich_books_with_meta(matched)
 
 
 def restock_book(book_id, count):
@@ -161,9 +218,13 @@ def calculate_overdue_fine(record):
     Automated Fine Calculation:
     Compares the due date with the current system date.
     Returns: (overdue_days, fine_amount, is_overdue)
+    Faculty/teachers are exempt from overdue fines.
     """
     if record["status"] != "Borrowed" or not record.get("due_date"):
         return 0, record.get("fine", 0.0), False
+
+    if record.get("role") == "teacher":
+        return 0, 0.0, False
 
     today = date.today()
     due_d = datetime.strptime(record["due_date"], "%Y-%m-%d").date()
@@ -179,9 +240,10 @@ def calculate_overdue_fine(record):
 
 def request_borrow_book(user, book_id):
     """
-    Student Workflow:
+    Borrow Request Workflow:
     Submits a borrow request to the Librarian for approval.
     Stock copy is not deducted until the Librarian approves it.
+    Supports both student (max 3, 7 days) and faculty (max 5, 14 days) policies.
     """
     book = find_book_by_id(book_id)
     if not book:
@@ -198,18 +260,23 @@ def request_borrow_book(user, book_id):
     if pending_same:
         return False, f"You already submitted a request for '{book['title']}'.\nPlease wait for the Librarian to review it."
 
+    is_teacher = user.get("role") == "teacher"
+    max_limit = TEACHER_MAX_LIMIT if is_teacher else MAX_BORROW_LIMIT
+
     active_or_pending = [
         r for r in borrow_records
         if r["username"] == user["username"] and r["status"] in ("Borrowed", "Pending Approval")
     ]
-    if len(active_or_pending) >= MAX_BORROW_LIMIT:
-        return False, f"Borrow Limit Reached: You have {len(active_or_pending)} active/pending loan(s). Maximum allowed is {MAX_BORROW_LIMIT}."
+    if len(active_or_pending) >= max_limit:
+        role_label = "Faculty" if is_teacher else "Student"
+        return False, f"Borrow Limit Reached: You have {len(active_or_pending)} active/pending loan(s). Maximum allowed for {role_label} is {max_limit}."
 
     record = {
         "record_id": len(borrow_records) + 1,
         "username": user["username"],
         "name": user["name"],
-        "course": user.get("course", "Student"),
+        "role": user.get("role", "student"),
+        "course": user.get("department") or user.get("course", "Student"),
         "book_id": book["id"],
         "book_title": book["title"],
         "request_date": date.today().strftime("%Y-%m-%d"),
@@ -224,14 +291,15 @@ def request_borrow_book(user, book_id):
 
 
 def borrow_book(user, book_id):
-    """Alias for student request_borrow_book."""
+    """Alias for student/faculty request_borrow_book."""
     return request_borrow_book(user, book_id)
 
 
 def approve_borrow_request(record_id):
     """
     Librarian Workflow:
-    Approves a student's borrow request, deducts stock copy, and initiates the 7-day loan.
+    Approves a student or faculty borrow request, deducts stock copy, and initiates loan.
+    Sets 14 days for faculty, 7 days for students.
     """
     try:
         rid = int(record_id)
@@ -251,13 +319,16 @@ def approve_borrow_request(record_id):
 
     book["copies"] -= 1
     borrow_d = date.today()
-    due_d = borrow_d + timedelta(days=BORROW_DAYS)
+    is_teacher = record.get("role") == "teacher"
+    loan_days = TEACHER_BORROW_DAYS if is_teacher else BORROW_DAYS
+    due_d = borrow_d + timedelta(days=loan_days)
 
     record["borrow_date"] = borrow_d.strftime("%Y-%m-%d")
     record["due_date"] = due_d.strftime("%Y-%m-%d")
     record["status"] = "Borrowed"
 
-    return True, f"Approved! '{record['book_title']}' has been officially issued to {record['name']}.\nReturn deadline is {due_d.strftime('%b %d, %Y')}."
+    term_note = f"{loan_days}-day faculty loan" if is_teacher else "7-day standard loan"
+    return True, f"Approved! '{record['book_title']}' has been officially issued to {record['name']} ({term_note}).\nReturn deadline is {due_d.strftime('%b %d, %Y')}."
 
 
 def reject_borrow_request(record_id):
@@ -281,11 +352,11 @@ def reject_borrow_request(record_id):
     return True, f"Borrow request #{record_id} for '{record['book_title']}' has been rejected."
 
 
-def issue_book_to_student(student_id, book_id):
-    """Librarian feature: Issue book directly to walk-in student immediately at the desk."""
-    student = find_user_by_username(student_id)
-    if not student:
-        return False, f"Student with ID '{student_id}' not found."
+def issue_book_to_student(user_id, book_id):
+    """Librarian feature: Issue book directly to walk-in student or faculty immediately at the desk."""
+    target_user = find_user_by_username(user_id)
+    if not target_user:
+        return False, f"User with ID '{user_id}' not found."
 
     book = find_book_by_id(book_id)
     if not book:
@@ -294,22 +365,28 @@ def issue_book_to_student(student_id, book_id):
     if book["copies"] <= 0:
         return False, f"Out of Stock: '{book['title']}' has 0 copies available."
 
+    is_teacher = target_user.get("role") == "teacher"
+    max_limit = TEACHER_MAX_LIMIT if is_teacher else MAX_BORROW_LIMIT
+    loan_days = TEACHER_BORROW_DAYS if is_teacher else BORROW_DAYS
+
     active_loans = [
         r for r in borrow_records
-        if r["username"] == student["username"] and r["status"] == "Borrowed"
+        if r["username"] == target_user["username"] and r["status"] == "Borrowed"
     ]
-    if len(active_loans) >= MAX_BORROW_LIMIT:
-        return False, f"Borrow limit reached: Student has {len(active_loans)} active borrowed books."
+    if len(active_loans) >= max_limit:
+        role_label = "Faculty" if is_teacher else "Student"
+        return False, f"Borrow limit reached: {target_user['name']} has {len(active_loans)} active borrowed books (max {max_limit})."
 
     book["copies"] -= 1
     borrow_d = date.today()
-    due_d = borrow_d + timedelta(days=BORROW_DAYS)
+    due_d = borrow_d + timedelta(days=loan_days)
 
     record = {
         "record_id": len(borrow_records) + 1,
-        "username": student["username"],
-        "name": student["name"],
-        "course": student.get("course", "Student"),
+        "username": target_user["username"],
+        "name": target_user["name"],
+        "role": target_user.get("role", "student"),
+        "course": target_user.get("department") or target_user.get("course", "Member"),
         "book_id": book["id"],
         "book_title": book["title"],
         "request_date": borrow_d.strftime("%Y-%m-%d"),
@@ -320,7 +397,8 @@ def issue_book_to_student(student_id, book_id):
         "fine": 0.0
     }
     borrow_records.append(record)
-    return True, f"'{book['title']}' successfully issued to {student['name']}.\nDue date: {due_d.strftime('%b %d, %Y')}."
+    term_note = f"{loan_days}-day faculty loan" if is_teacher else f"{loan_days}-day standard loan"
+    return True, f"'{book['title']}' successfully issued to {target_user['name']} ({term_note}).\nDue date: {due_d.strftime('%b %d, %Y')}."
 
 
 def reserve_book(user, book_id):
@@ -397,6 +475,133 @@ def get_all_reservations():
     return reservations
 
 
+# ================= COURSE READING LISTS & RECOMMENDATIONS =================
+
+def get_all_recommendations():
+    """Retrieve all teacher recommended reading entries."""
+    return recommendations
+
+
+def get_teacher_recommendations(username):
+    """Retrieve recommendations created by a specific teacher."""
+    return [r for r in recommendations if r.get("teacher_username") == username]
+
+
+def recommend_book(user, book_id, course, notes):
+    """Teacher feature: Recommend a book for a syllabus / class reading list."""
+    book = find_book_by_id(book_id)
+    if not book:
+        return False, "Book not found in catalog."
+
+    existing = next((r for r in recommendations if r["book_id"] == book["id"] and r["teacher_username"] == user["username"]), None)
+    if existing:
+        existing["course"] = course.strip() if course else "Course Reading List"
+        existing["notes"] = notes.strip()
+        existing["date_added"] = date.today().strftime("%Y-%m-%d")
+        return True, f"Updated course recommendation for '{book['title']}'!"
+
+    rec = {
+        "id": len(recommendations) + 1,
+        "book_id": book["id"],
+        "book_title": book["title"],
+        "teacher_username": user["username"],
+        "teacher_name": user["name"],
+        "course": course.strip() if course else "Course Reading List",
+        "notes": notes.strip(),
+        "date_added": date.today().strftime("%Y-%m-%d")
+    }
+    recommendations.append(rec)
+    return True, f"'{book['title']}' successfully added to Course Recommendations!"
+
+
+def remove_recommendation(rec_id, teacher_username=None):
+    """Remove a book from recommendations."""
+    global recommendations
+    rec = next((r for r in recommendations if r["id"] == int(rec_id)), None)
+    if not rec:
+        return False, "Recommendation record not found."
+    if teacher_username and rec["teacher_username"] != teacher_username:
+        return False, "Permission denied: You can only remove your own recommendations."
+    recommendations = [r for r in recommendations if r["id"] != int(rec_id)]
+    return True, f"Recommendation for '{rec['book_title']}' removed."
+
+
+# ================= BOOK ACQUISITIONS (TEACHER PURCHASE REQUESTS) =================
+
+def request_book_acquisition(user, title, author, category, reason):
+    """Teacher feature: Request a new book purchase/acquisition for the library."""
+    title = title.strip()
+    author = author.strip()
+    if not title or not author:
+        return False, "Title and Author are required."
+
+    acq = {
+        "id": len(acquisitions) + 1,
+        "teacher_username": user["username"],
+        "teacher_name": user["name"],
+        "department": user.get("department") or user.get("course") or "College Faculty",
+        "title": title,
+        "author": author,
+        "category": category.strip() if category else "General",
+        "reason": reason.strip() if reason else "Faculty curriculum recommendation",
+        "request_date": date.today().strftime("%Y-%m-%d"),
+        "status": "Pending Review"
+    }
+    acquisitions.append(acq)
+    return True, f"Acquisition request for '{title}' submitted to Librarian for review!"
+
+
+def get_all_acquisitions(teacher_username=None):
+    """Retrieve book acquisition requests."""
+    if teacher_username:
+        return [a for a in acquisitions if a.get("teacher_username") == teacher_username]
+    return acquisitions
+
+
+def approve_acquisition_request(acq_id, shelf="Shelf A-1", copies=3):
+    """Librarian feature: Approve acquisition and directly add book to catalog inventory."""
+    try:
+        aid = int(acq_id)
+    except (ValueError, TypeError):
+        return False, "Invalid acquisition request ID."
+
+    acq = next((a for a in acquisitions if a["id"] == aid), None)
+    if not acq:
+        return False, "Acquisition request not found."
+    if acq["status"] != "Pending Review":
+        return False, f"Cannot approve: Request is already marked as '{acq['status']}'."
+
+    new_book_id = len(books) + 1
+    new_book = {
+        "id": new_book_id,
+        "title": acq["title"],
+        "author": acq["author"],
+        "category": acq["category"],
+        "shelf": shelf.strip() if shelf else "Shelf A-1",
+        "copies": max(1, int(copies)) if copies else 3
+    }
+    books.append(new_book)
+    acq["status"] = "Approved & Added"
+    return True, f"Acquisition approved! '{acq['title']}' officially added to inventory with {new_book['copies']} copies on {new_book['shelf']}."
+
+
+def reject_acquisition_request(acq_id, reason="Budget / policy constraints"):
+    """Librarian feature: Decline an acquisition request."""
+    try:
+        aid = int(acq_id)
+    except (ValueError, TypeError):
+        return False, "Invalid acquisition request ID."
+
+    acq = next((a for a in acquisitions if a["id"] == aid), None)
+    if not acq:
+        return False, "Acquisition request not found."
+    if acq["status"] != "Pending Review":
+        return False, f"Cannot reject: Request is already marked as '{acq['status']}'."
+
+    acq["status"] = "Declined"
+    return True, f"Acquisition request for '{acq['title']}' declined."
+
+
 # ================= LIBRARIAN ANALYTICS & DASHBOARD METRICS =================
 
 def get_analytics_metrics():
@@ -407,10 +612,14 @@ def get_analytics_metrics():
     - Pending borrow requests
     - Overdue books
     - Pending reservations
+    - Pending faculty acquisitions
     """
     total_titles = len(books)
     active_borrowed = sum(1 for r in borrow_records if r["status"] == "Borrowed")
     pending_requests = sum(1 for r in borrow_records if r["status"] == "Pending Approval")
+    pending_acquisitions = sum(1 for a in acquisitions if a["status"] == "Pending Review")
+    total_faculty = sum(1 for u in users if u.get("role") == "teacher")
+    total_recommendations = len(recommendations)
     
     today = date.today()
     overdue_books = 0
@@ -427,5 +636,8 @@ def get_analytics_metrics():
         "active_borrowed": active_borrowed,
         "pending_requests": pending_requests,
         "overdue_books": overdue_books,
-        "pending_reservations": pending_reservations
+        "pending_reservations": pending_reservations,
+        "pending_acquisitions": pending_acquisitions,
+        "total_faculty": total_faculty,
+        "total_recommendations": total_recommendations
     }

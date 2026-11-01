@@ -55,17 +55,24 @@
   <div id="modal-register" class="modal-backdrop" style="display: none;">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title">Student Registration</div>
+        <div class="modal-title" id="reg-modal-title">Member Registration</div>
         <button class="modal-close" onclick="closeModal('modal-register')">&times;</button>
       </div>
       <form id="form-register">
         <div class="modal-body">
           <div class="form-group">
-            <label for="reg-name">Full Name *</label>
-            <input type="text" id="reg-name" class="form-input" placeholder="" required>
+            <label for="reg-role">Account Type *</label>
+            <select id="reg-role" class="form-input">
+              <option value="student">Student Account</option>
+              <option value="teacher">Teacher / Faculty Account</option>
+            </select>
           </div>
           <div class="form-group">
-            <label for="reg-id">Student ID *</label>
+            <label for="reg-name">Full Name *</label>
+            <input type="text" id="reg-name" class="form-input" placeholder="e.g. Maria Santos" required>
+          </div>
+          <div class="form-group">
+            <label for="reg-id" id="lbl-reg-id">Student ID *</label>
             <input type="text" id="reg-id" class="form-input" placeholder="e.g. 2026000" required>
           </div>
           <div class="form-group">
@@ -73,12 +80,12 @@
             <input type="password" id="reg-password" class="form-input" placeholder="••••••••" required>
           </div>
           <div class="form-group">
-            <label for="reg-course">Course / Year Level</label>
+            <label for="reg-course" id="lbl-reg-course">Course / Year Level</label>
             <input type="text" id="reg-course" class="form-input" placeholder="e.g. BS Computer Science 2">
           </div>
           <div class="form-group">
             <label for="reg-email">Email Address</label>
-            <input type="email" id="reg-email" class="form-input" placeholder="student@gmail.com">
+            <input type="email" id="reg-email" class="form-input" placeholder="member@school.edu">
           </div>
           <div class="form-group">
             <label for="reg-contact">Contact Number</label>
@@ -197,6 +204,8 @@
           setTimeout(() => {
             if (res.user.role === "librarian") {
               window.location.href = "admin.html";
+            } else if (res.user.role === "teacher") {
+              window.location.href = "teacher.html";
             } else {
               window.location.href = "student.html";
             }
@@ -206,8 +215,33 @@
         }
       });
 
+      // Role selection toggle in registration
+      const roleSelect = document.getElementById("reg-role");
+      if (roleSelect) {
+        roleSelect.addEventListener("change", () => {
+          const isTeacher = roleSelect.value === "teacher";
+          const lblId = document.getElementById("lbl-reg-id");
+          const inputId = document.getElementById("reg-id");
+          const lblCourse = document.getElementById("lbl-reg-course");
+          const inputCourse = document.getElementById("reg-course");
+
+          if (isTeacher) {
+            lblId.textContent = "Faculty / Employee ID *";
+            inputId.placeholder = "e.g. T-101 or teacher";
+            lblCourse.textContent = "Department / Specialization";
+            inputCourse.placeholder = "e.g. College of Computer Studies";
+          } else {
+            lblId.textContent = "Student ID *";
+            inputId.placeholder = "e.g. 2026000";
+            lblCourse.textContent = "Course / Year Level";
+            inputCourse.placeholder = "e.g. BS Computer Science 2";
+          }
+        });
+      }
+
       document.getElementById("form-register").addEventListener("submit", async (e) => {
         e.preventDefault();
+        const role = document.getElementById("reg-role") ? document.getElementById("reg-role").value : "student";
         const name = document.getElementById("reg-name").value.trim();
         const studentId = document.getElementById("reg-id").value.trim();
         const password = document.getElementById("reg-password").value.trim();
@@ -215,7 +249,7 @@
         const email = document.getElementById("reg-email").value.trim();
         const contact = document.getElementById("reg-contact").value.trim();
 
-        const res = await callApi("register", name, studentId, password, email, course, contact);
+        const res = await callApi("register", name, studentId, password, email, course, contact, role);
         if (res && res.success) {
           closeModal("modal-register");
           document.getElementById("form-register").reset();

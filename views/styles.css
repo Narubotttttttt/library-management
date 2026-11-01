@@ -771,6 +771,12 @@ tbody tr.selected {
 .badge-status-returned { background: #dcfce7; color: #15803d; }
 .badge-status-overdue { background: #fee2e2; color: #b91c1c; }
 .badge-status-pending { background: #ede9fe; color: #6d28d9; }
+.badge-faculty { background: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe; }
+.badge-student { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+.badge-recommended { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+
+.card-purple { border-left: 4px solid #8b5cf6; }
+.card-purple .metric-icon-wrap { background: #f5f3ff; color: #8b5cf6; }
 
 /* Modals */
 .modal-backdrop {
