@@ -30,11 +30,11 @@ users = [
     {
         "username": "teacher",
         "password": "123",
-        "name": "Prof. Elena Santos",
+        "name": "Kay Rejoice Waga",
         "role": "teacher",
-        "email": "elena.santos@school.edu",
-        "course": "Faculty - Computer Studies",
-        "department": "College of Computer Studies",
+        "email": "kaywaga@school.edu",
+        "course": "Faculty - BSIT",
+        "department": "College of Information Technology",
         "contact": "09171112233"
     },
     {
