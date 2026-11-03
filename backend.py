@@ -617,6 +617,7 @@ def get_analytics_metrics():
     total_titles = len(books)
     active_borrowed = sum(1 for r in borrow_records if r["status"] == "Borrowed")
     pending_requests = sum(1 for r in borrow_records if r["status"] == "Pending Approval")
+    returned_books = sum(1 for r in borrow_records if r["status"] == "Returned")
     pending_acquisitions = sum(1 for a in acquisitions if a["status"] == "Pending Review")
     total_faculty = sum(1 for u in users if u.get("role") == "teacher")
     total_recommendations = len(recommendations)
@@ -635,6 +636,7 @@ def get_analytics_metrics():
         "total_titles": total_titles,
         "active_borrowed": active_borrowed,
         "pending_requests": pending_requests,
+        "returned_books": returned_books,
         "overdue_books": overdue_books,
         "pending_reservations": pending_reservations,
         "pending_acquisitions": pending_acquisitions,
