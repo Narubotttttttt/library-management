@@ -1,6 +1,6 @@
 # School Library Management System
 
-A modern desktop School Library Management System built with **Python** and **HTML/CSS/JavaScript** (powered by `pywebview`). 
+A desktop School Library Management System built with **Python** and **HTML/CSS/JavaScript** (powered by `pywebview`). 
 
 This application connects **Students**, **Teachers**, and the **Librarian (Admin)** into one easy-to-use school library system.
 

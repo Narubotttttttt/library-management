@@ -73,7 +73,7 @@
             <div class="user-role-text" id="user-course">Faculty Member</div>
           </div>
         </div>
-        <button class="btn-sidebar-logout" id="btn-logout">
+        <button class="btn-sidebar-logout" id="btn-logout" onclick="handleLogout()">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <polyline points="16 17 21 12 16 7"></polyline>
@@ -324,7 +324,7 @@
 
   <script>
     // --- Helper Utilities ---
-    function waitForApi() {
+    function waitForApi(timeoutMs = 4000) {
       return new Promise((resolve) => {
         if (window.pywebview && window.pywebview.api) {
           resolve(window.pywebview.api);
@@ -332,14 +332,21 @@
         }
         const onReady = () => {
           window.removeEventListener("pywebviewready", onReady);
-          resolve(window.pywebview.api);
+          clearInterval(interval);
+          resolve(window.pywebview ? window.pywebview.api : null);
         };
         window.addEventListener("pywebviewready", onReady);
+        const startTime = Date.now();
         const interval = setInterval(() => {
           if (window.pywebview && window.pywebview.api) {
             clearInterval(interval);
             window.removeEventListener("pywebviewready", onReady);
             resolve(window.pywebview.api);
+          } else if (Date.now() - startTime > timeoutMs) {
+            clearInterval(interval);
+            window.removeEventListener("pywebviewready", onReady);
+            console.warn("waitForApi timed out after " + timeoutMs + "ms");
+            resolve(window.pywebview ? window.pywebview.api : null);
           }
         }, 50);
       });
@@ -348,7 +355,7 @@
     async function callApi(methodName, ...args) {
       try {
         const api = await waitForApi();
-        if (typeof api[methodName] === "function") {
+        if (api && typeof api[methodName] === "function") {
           return await api[methodName](...args);
         }
         return { success: false, message: `Method ${methodName} not found` };
@@ -356,6 +363,16 @@
         return { success: false, message: String(err) };
       }
     }
+
+    async function handleLogout() {
+      try {
+        await callApi("logout");
+      } catch (e) {
+        console.warn("Logout error:", e);
+      }
+      window.location.href = "login.html";
+    }
+    window.handleLogout = handleLogout;
 
     function showToast(message, type = "info") {
       let container = document.getElementById("toast-container");
@@ -535,16 +552,18 @@
     }
 
     async function loadCatalog(query = "") {
-      const books = await callApi("get_books", query);
       const tbody = document.getElementById("books-tbody");
+      if (!tbody) return;
       tbody.innerHTML = "";
 
-      if (!books || books.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No matching books found in catalog.</td></tr>`;
-        return;
-      }
+      try {
+        const books = await callApi("get_books", query);
+        if (!Array.isArray(books) || books.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No matching books found in catalog.</td></tr>`;
+          return;
+        }
 
-      books.forEach((b) => {
+        books.forEach((b) => {
         const tr = document.createElement("tr");
         if (selectedBookId === b.id) tr.classList.add("selected");
 
@@ -588,6 +607,10 @@
         `;
         tbody.appendChild(tr);
       });
+      } catch (err) {
+        console.error("loadCatalog error:", err);
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 24px;">Failed to load catalog books.</td></tr>`;
+      }
     }
 
     async function openRecommendDialog(bookId) {
@@ -683,14 +706,16 @@
     }
 
     async function loadRecommendations() {
-      const recs = await callApi("get_my_recommendations");
       const tbody = document.getElementById("recommendations-tbody");
+      if (!tbody) return;
       tbody.innerHTML = "";
 
-      if (!recs || recs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">You have not added any course book recommendations yet.</td></tr>`;
-        return;
-      }
+      try {
+        const recs = await callApi("get_my_recommendations");
+        if (!Array.isArray(recs) || recs.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">You have not added any course book recommendations yet.</td></tr>`;
+          return;
+        }
 
       recs.forEach((r) => {
         const tr = document.createElement("tr");
@@ -706,6 +731,10 @@
         `;
         tbody.appendChild(tr);
       });
+      } catch (err) {
+        console.error("loadRecommendations error:", err);
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 24px;">Failed to load course recommendations.</td></tr>`;
+      }
     }
 
     async function removeRecommendation(recId) {
@@ -720,14 +749,16 @@
     }
 
     async function loadAcquisitions() {
-      const acqs = await callApi("get_my_acquisitions");
       const tbody = document.getElementById("acquisitions-tbody");
+      if (!tbody) return;
       tbody.innerHTML = "";
 
-      if (!acqs || acqs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No book purchase requests submitted yet.</td></tr>`;
-        return;
-      }
+      try {
+        const acqs = await callApi("get_my_acquisitions");
+        if (!Array.isArray(acqs) || acqs.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No book purchase requests submitted yet.</td></tr>`;
+          return;
+        }
 
       acqs.forEach((a) => {
         const tr = document.createElement("tr");
@@ -751,6 +782,10 @@
         `;
         tbody.appendChild(tr);
       });
+      } catch (err) {
+        console.error("loadAcquisitions error:", err);
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 24px;">Failed to load book acquisitions.</td></tr>`;
+      }
     }
 
     // Global bindings for inline onclicks

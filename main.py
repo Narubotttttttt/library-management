@@ -42,15 +42,23 @@ class LibraryApi:
         return {"success": True}
 
     def get_current_user(self):
-        if not self.current_user:
+        try:
+            if not self.current_user:
+                return None
+            return {k: v for k, v in self.current_user.items() if k != "password"}
+        except Exception as e:
+            print(f"[LibraryApi.get_current_user] error: {e}")
             return None
-        return {k: v for k, v in self.current_user.items() if k != "password"}
 
     # Books & Catalog
     def get_books(self, query=""):
-        if query and isinstance(query, str) and query.strip():
-            return backend.search_books(query)
-        return backend.get_all_books()
+        try:
+            if query and isinstance(query, str) and query.strip():
+                return backend.search_books(query.strip()) or []
+            return backend.get_all_books() or []
+        except Exception as e:
+            print(f"[LibraryApi.get_books] error: {e}")
+            return []
 
     def borrow_book(self, book_id):
         if not self.current_user:
@@ -65,9 +73,13 @@ class LibraryApi:
         return {"success": success, "message": msg}
 
     def get_my_borrow_records(self):
-        if not self.current_user:
+        try:
+            if not self.current_user:
+                return []
+            return backend.get_user_borrow_records(self.current_user["username"]) or []
+        except Exception as e:
+            print(f"[LibraryApi.get_my_borrow_records] error: {e}")
             return []
-        return backend.get_user_borrow_records(self.current_user["username"])
 
     def return_book(self, record_id):
         success, msg, fine, is_overdue = backend.return_borrowed_book(int(record_id))

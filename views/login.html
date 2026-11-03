@@ -104,7 +104,7 @@
 
   <script>
     // --- Helper Utilities ---
-    function waitForApi() {
+    function waitForApi(timeoutMs = 4000) {
       return new Promise((resolve) => {
         if (window.pywebview && window.pywebview.api) {
           resolve(window.pywebview.api);
@@ -112,14 +112,21 @@
         }
         const onReady = () => {
           window.removeEventListener("pywebviewready", onReady);
-          resolve(window.pywebview.api);
+          clearInterval(interval);
+          resolve(window.pywebview ? window.pywebview.api : null);
         };
         window.addEventListener("pywebviewready", onReady);
+        const startTime = Date.now();
         const interval = setInterval(() => {
           if (window.pywebview && window.pywebview.api) {
             clearInterval(interval);
             window.removeEventListener("pywebviewready", onReady);
             resolve(window.pywebview.api);
+          } else if (Date.now() - startTime > timeoutMs) {
+            clearInterval(interval);
+            window.removeEventListener("pywebviewready", onReady);
+            console.warn("waitForApi timed out after " + timeoutMs + "ms");
+            resolve(window.pywebview ? window.pywebview.api : null);
           }
         }, 50);
       });
@@ -128,7 +135,7 @@
     async function callApi(methodName, ...args) {
       try {
         const api = await waitForApi();
-        if (typeof api[methodName] === "function") {
+        if (api && typeof api[methodName] === "function") {
           return await api[methodName](...args);
         }
         return { success: false, message: `Method ${methodName} not found` };

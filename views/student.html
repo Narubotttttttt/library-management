@@ -63,7 +63,7 @@
             <div class="user-role-text" id="user-course">Student</div>
           </div>
         </div>
-        <button class="btn-sidebar-logout" id="btn-logout">
+        <button class="btn-sidebar-logout" id="btn-logout" onclick="handleLogout()">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <polyline points="16 17 21 12 16 7"></polyline>
@@ -193,7 +193,7 @@
 
   <script>
     // --- Helper Utilities ---
-    function waitForApi() {
+    function waitForApi(timeoutMs = 4000) {
       return new Promise((resolve) => {
         if (window.pywebview && window.pywebview.api) {
           resolve(window.pywebview.api);
@@ -201,14 +201,21 @@
         }
         const onReady = () => {
           window.removeEventListener("pywebviewready", onReady);
-          resolve(window.pywebview.api);
+          clearInterval(interval);
+          resolve(window.pywebview ? window.pywebview.api : null);
         };
         window.addEventListener("pywebviewready", onReady);
+        const startTime = Date.now();
         const interval = setInterval(() => {
           if (window.pywebview && window.pywebview.api) {
             clearInterval(interval);
             window.removeEventListener("pywebviewready", onReady);
             resolve(window.pywebview.api);
+          } else if (Date.now() - startTime > timeoutMs) {
+            clearInterval(interval);
+            window.removeEventListener("pywebviewready", onReady);
+            console.warn("waitForApi timed out after " + timeoutMs + "ms");
+            resolve(window.pywebview ? window.pywebview.api : null);
           }
         }, 50);
       });
@@ -217,7 +224,7 @@
     async function callApi(methodName, ...args) {
       try {
         const api = await waitForApi();
-        if (typeof api[methodName] === "function") {
+        if (api && typeof api[methodName] === "function") {
           return await api[methodName](...args);
         }
         return { success: false, message: `Method ${methodName} not found` };
@@ -257,6 +264,7 @@
     // --- Student Portal Logic ---
     let currentUser = null;
     let selectedBookId = null;
+    let filterRecommendedOnly = false;
 
     const navMeta = {
       "section-catalog": { title: "Book Catalog", subtitle: "Search, explore available shelf copies, and request books from the librarian" },
@@ -264,23 +272,26 @@
       "section-holds": { title: "My Holds & Reservations", subtitle: "Track the queue and status of your requested book holds" }
     };
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      currentUser = await callApi("get_current_user");
-      if (!currentUser) {
-        window.location.href = "login.html";
-        return;
+    // Logout handler accessible from anywhere
+    async function handleLogout() {
+      try {
+        await callApi("logout");
+      } catch (e) {
+        console.warn("Logout API call failed:", e);
+      }
+      window.location.href = "login.html";
+    }
+    window.handleLogout = handleLogout;
+
+    async function initStudentPortal() {
+      // 1. Immediately bind all static UI buttons so navigation & logout NEVER freeze
+      const logoutBtn = document.getElementById("btn-logout");
+      if (logoutBtn) {
+        logoutBtn.onclick = handleLogout;
       }
 
-      document.getElementById("user-name").textContent = currentUser.name;
-      document.getElementById("user-avatar").textContent = currentUser.name.charAt(0).toUpperCase();
-      document.getElementById("user-course").textContent = currentUser.course || "Student";
-
-      await loadCatalog();
-      await updateActiveLoansCount();
-
-      // Sidebar Navigation Click Handlers
       document.querySelectorAll(".sidebar .nav-item").forEach((btn) => {
-        btn.addEventListener("click", async () => {
+        btn.onclick = async () => {
           document.querySelectorAll(".sidebar .nav-item").forEach((b) => b.classList.remove("active"));
           document.querySelectorAll(".page-section").forEach((s) => (s.style.display = "none"));
 
@@ -297,113 +308,167 @@
           if (targetSection === "section-catalog") await loadCatalog();
           if (targetSection === "section-loans") await loadStudentLoans();
           if (targetSection === "section-holds") await loadStudentHolds();
-        });
-      });
-
-      document.getElementById("btn-logout").addEventListener("click", async () => {
-        await callApi("logout");
-        window.location.href = "login.html";
+        };
       });
 
       const searchInput = document.getElementById("search-input");
-      searchInput.addEventListener("input", (e) => {
-        loadCatalog(e.target.value);
-      });
-
-      let filterRecommendedOnly = false;
-      document.getElementById("btn-reset-search").addEventListener("click", () => {
-        searchInput.value = "";
-        filterRecommendedOnly = false;
-        document.getElementById("btn-filter-recommended").classList.remove("active");
-        loadCatalog("");
-      });
-
-      document.getElementById("btn-filter-recommended").addEventListener("click", () => {
-        filterRecommendedOnly = !filterRecommendedOnly;
-        document.getElementById("btn-filter-recommended").classList.toggle("active", filterRecommendedOnly);
-        loadCatalog(searchInput.value);
-      });
-
-      document.getElementById("btn-borrow-selected").addEventListener("click", () => {
-        if (!selectedBookId) {
-          showToast("Please select a book row from the table first.", "info");
-          return;
-        }
-        borrowBook(selectedBookId);
-      });
-
-      document.getElementById("btn-reserve-selected").addEventListener("click", () => {
-        if (!selectedBookId) {
-          showToast("Please select a book row from the table first.", "info");
-          return;
-        }
-        reserveBook(selectedBookId);
-      });
-    });
-
-    let filterRecommendedOnly = false;
-
-    async function updateActiveLoansCount() {
-      const loans = await callApi("get_my_borrow_records");
-      const activeOrPending = (loans || []).filter((l) => l.status === "Borrowed" || l.status === "Pending Approval").length;
-      const badge = document.getElementById("badge-active-loans");
-      if (badge) badge.textContent = activeOrPending;
-    }
-
-    async function loadCatalog(query = "") {
-      let books = await callApi("get_books", query);
-      if (filterRecommendedOnly) {
-        books = (books || []).filter((b) => b.recommendations && b.recommendations.length > 0);
+      if (searchInput) {
+        searchInput.oninput = (e) => loadCatalog(e.target.value);
       }
-      const tbody = document.getElementById("books-tbody");
-      tbody.innerHTML = "";
 
-      if (!books || books.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No books found matching your search.</td></tr>`;
+      const btnResetSearch = document.getElementById("btn-reset-search");
+      if (btnResetSearch) {
+        btnResetSearch.onclick = () => {
+          if (searchInput) searchInput.value = "";
+          filterRecommendedOnly = false;
+          const recBtn = document.getElementById("btn-filter-recommended");
+          if (recBtn) recBtn.classList.remove("active");
+          loadCatalog("");
+        };
+      }
+
+      const btnFilterRec = document.getElementById("btn-filter-recommended");
+      if (btnFilterRec) {
+        btnFilterRec.onclick = () => {
+          filterRecommendedOnly = !filterRecommendedOnly;
+          btnFilterRec.classList.toggle("active", filterRecommendedOnly);
+          loadCatalog(searchInput ? searchInput.value : "");
+        };
+      }
+
+      const btnBorrowSel = document.getElementById("btn-borrow-selected");
+      if (btnBorrowSel) {
+        btnBorrowSel.onclick = () => {
+          if (!selectedBookId) {
+            showToast("Please select a book row from the table first.", "info");
+            return;
+          }
+          borrowBook(selectedBookId);
+        };
+      }
+
+      const btnReserveSel = document.getElementById("btn-reserve-selected");
+      if (btnReserveSel) {
+        btnReserveSel.onclick = () => {
+          if (!selectedBookId) {
+            showToast("Please select a book row from the table first.", "info");
+            return;
+          }
+          reserveBook(selectedBookId);
+        };
+      }
+
+      // 2. Fetch authenticated student session
+      try {
+        currentUser = await callApi("get_current_user");
+      } catch (err) {
+        console.error("Error fetching current user:", err);
+      }
+
+      if (!currentUser || currentUser.role !== "student") {
+        window.location.href = "login.html";
         return;
       }
 
-      books.forEach((b) => {
-        const tr = document.createElement("tr");
-        if (selectedBookId === b.id) tr.classList.add("selected");
+      if (currentUser.name) {
+        const nameEl = document.getElementById("user-name");
+        const avatarEl = document.getElementById("user-avatar");
+        if (nameEl) nameEl.textContent = currentUser.name;
+        if (avatarEl) avatarEl.textContent = currentUser.name.charAt(0).toUpperCase();
+      }
+      const courseEl = document.getElementById("user-course");
+      if (courseEl) courseEl.textContent = currentUser.course || "Student";
 
-        tr.onclick = () => {
-          document.querySelectorAll("#books-tbody tr").forEach((r) => r.classList.remove("selected"));
-          tr.classList.add("selected");
-          selectedBookId = b.id;
-        };
+      // 3. Load catalog and active loans count
+      await loadCatalog();
+      await updateActiveLoansCount();
+    }
 
-        const isAvailable = b.copies > 0;
-        const copiesBadge = isAvailable
-          ? `<span class="badge badge-stock">${b.copies} available</span>`
-          : `<span class="badge badge-out">Out of stock (0)</span>`;
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initStudentPortal);
+    } else {
+      initStudentPortal();
+    }
 
-        let recBadges = "";
-        if (b.recommendations && b.recommendations.length > 0) {
-          recBadges = b.recommendations.map(r => 
-            `<div style="margin-top: 4px;"><span class="badge badge-recommended" title="${r.notes}">★ ${r.teacher_name} &bull; ${r.course}</span></div>`
-          ).join("");
+    async function updateActiveLoansCount() {
+      try {
+        const loans = await callApi("get_my_borrow_records");
+        const list = Array.isArray(loans) ? loans : [];
+        const activeOrPending = list.filter((l) => l.status === "Borrowed" || l.status === "Pending Approval").length;
+        const badge = document.getElementById("badge-active-loans");
+        if (badge) badge.textContent = activeOrPending;
+      } catch (err) {
+        console.warn("updateActiveLoansCount error:", err);
+      }
+    }
+
+    async function loadCatalog(query = "") {
+      const tbody = document.getElementById("books-tbody");
+      if (!tbody) return;
+
+      try {
+        let books = await callApi("get_books", query);
+        if (!Array.isArray(books)) {
+          console.warn("get_books returned non-array:", books);
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No books found matching your search.</td></tr>`;
+          return;
         }
 
-        tr.innerHTML = `
-          <td style="font-weight: bold; color: var(--text-muted);">${b.id}</td>
-          <td>
-            <div style="font-weight: 600;">${b.title}</div>
-            ${recBadges}
-          </td>
-          <td>${b.author}</td>
-          <td><span class="badge" style="background: #f1f5f9; color: #334155;">${b.category}</span></td>
-          <td><span class="badge badge-shelf">${b.shelf || "Main Shelf"}</span></td>
-          <td style="text-align: center;">${copiesBadge}</td>
-          <td style="text-align: right;">
-            ${isAvailable 
-              ? `<button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="event.stopPropagation(); borrowBook(${b.id})">Request Borrow</button>`
-              : `<button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.78rem;" onclick="event.stopPropagation(); reserveBook(${b.id})">Reserve</button>`
-            }
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
+        if (filterRecommendedOnly) {
+          books = books.filter((b) => b.recommendations && b.recommendations.length > 0);
+        }
+        tbody.innerHTML = "";
+
+        if (books.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No books found matching your search.</td></tr>`;
+          return;
+        }
+
+        books.forEach((b) => {
+          const tr = document.createElement("tr");
+          if (selectedBookId === b.id) tr.classList.add("selected");
+
+          tr.onclick = () => {
+            document.querySelectorAll("#books-tbody tr").forEach((r) => r.classList.remove("selected"));
+            tr.classList.add("selected");
+            selectedBookId = b.id;
+          };
+
+          const isAvailable = b.copies > 0;
+          const copiesBadge = isAvailable
+            ? `<span class="badge badge-stock">${b.copies} available</span>`
+            : `<span class="badge badge-out">Out of stock (0)</span>`;
+
+          let recBadges = "";
+          if (b.recommendations && b.recommendations.length > 0) {
+            recBadges = b.recommendations.map(r => 
+              `<div style="margin-top: 4px;"><span class="badge badge-recommended" title="${r.notes}">★ ${r.teacher_name} &bull; ${r.course}</span></div>`
+            ).join("");
+          }
+
+          tr.innerHTML = `
+            <td style="font-weight: bold; color: var(--text-muted);">${b.id}</td>
+            <td>
+              <div style="font-weight: 600;">${b.title}</div>
+              ${recBadges}
+            </td>
+            <td>${b.author}</td>
+            <td><span class="badge" style="background: #f1f5f9; color: #334155;">${b.category}</span></td>
+            <td><span class="badge badge-shelf">${b.shelf || "Main Shelf"}</span></td>
+            <td style="text-align: center;">${copiesBadge}</td>
+            <td style="text-align: right;">
+              ${isAvailable 
+                ? `<button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="event.stopPropagation(); borrowBook(${b.id})">Request Borrow</button>`
+                : `<button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.78rem;" onclick="event.stopPropagation(); reserveBook(${b.id})">Reserve</button>`
+              }
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("loadCatalog error:", err);
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 24px;">Failed to load books. Please click Reset Filter or refresh.</td></tr>`;
+      }
     }
 
     let isBorrowing = false;
