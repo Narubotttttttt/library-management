@@ -48,6 +48,7 @@ users = [
     }
 ]
 
+# In-memory storage for active loans, requests, and reservations
 borrow_records = []
 reservations = []
 
@@ -174,12 +175,28 @@ def search_books(query):
     return _enrich_books_with_meta(matched)
 
 
+def sync_book_reservations(book_id):
+    """
+    Automatically updates waiting reservations to 'Ready for Pickup'
+    when physical shelf copies become available.
+    """
+    book = find_book_by_id(book_id)
+    if not book:
+        return
+    available = book.get("copies", 0)
+    if available > 0:
+        for r in reservations:
+            if r.get("book_id") == book_id and r.get("status") in ("Waiting for Stock", "Pending"):
+                r["status"] = "Ready for Pickup"
+
+
 def restock_book(book_id, count):
-    """Add stock to an existing book."""
+    """Add stock to an existing book and update waiting reservations."""
     book = find_book_by_id(book_id)
     if not book:
         return False, "Book not found."
     book["copies"] += count
+    sync_book_reservations(book["id"])
     return True, f"Successfully updated copies to {book['copies']}!"
 
 
@@ -269,16 +286,18 @@ def request_borrow_book(user, book_id):
     ]
     if len(active_or_pending) >= max_limit:
         role_label = "Faculty" if is_teacher else "Student"
-        return False, f"Borrow Limit Reached: You have {len(active_or_pending)} active/pending loan(s). Maximum allowed for {role_label} is {max_limit}."
+        return False, f"Borrow Limit Reached: You have {len(active_or_pending)} active/pending borrowed book(s). Maximum allowed for {role_label} is {max_limit}."
 
+    next_id = max([r.get("record_id", 0) for r in borrow_records], default=0) + 1
     record = {
-        "record_id": len(borrow_records) + 1,
+        "record_id": next_id,
         "username": user["username"],
         "name": user["name"],
         "role": user.get("role", "student"),
         "course": user.get("department") or user.get("course", "Student"),
         "book_id": book["id"],
         "book_title": book["title"],
+        "shelf": book.get("shelf", "Shelf A-1"),
         "request_date": date.today().strftime("%Y-%m-%d"),
         "borrow_date": None,
         "due_date": None,
@@ -327,7 +346,7 @@ def approve_borrow_request(record_id):
     record["due_date"] = due_d.strftime("%Y-%m-%d")
     record["status"] = "Borrowed"
 
-    term_note = f"{loan_days}-day faculty loan" if is_teacher else "7-day standard loan"
+    term_note = f"{loan_days}-day faculty borrow period" if is_teacher else f"{loan_days}-day standard borrow period"
     return True, f"Approved! '{record['book_title']}' has been officially issued to {record['name']} ({term_note}).\nReturn deadline is {due_d.strftime('%b %d, %Y')}."
 
 
@@ -381,14 +400,16 @@ def issue_book_to_student(user_id, book_id):
     borrow_d = date.today()
     due_d = borrow_d + timedelta(days=loan_days)
 
+    next_id = max([r.get("record_id", 0) for r in borrow_records], default=0) + 1
     record = {
-        "record_id": len(borrow_records) + 1,
+        "record_id": next_id,
         "username": target_user["username"],
         "name": target_user["name"],
         "role": target_user.get("role", "student"),
         "course": target_user.get("department") or target_user.get("course", "Member"),
         "book_id": book["id"],
         "book_title": book["title"],
+        "shelf": book.get("shelf", "Shelf A-1"),
         "request_date": borrow_d.strftime("%Y-%m-%d"),
         "borrow_date": borrow_d.strftime("%Y-%m-%d"),
         "due_date": due_d.strftime("%Y-%m-%d"),
@@ -397,27 +418,138 @@ def issue_book_to_student(user_id, book_id):
         "fine": 0.0
     }
     borrow_records.append(record)
-    term_note = f"{loan_days}-day faculty loan" if is_teacher else f"{loan_days}-day standard loan"
+    term_note = f"{loan_days}-day faculty borrow period" if is_teacher else f"{loan_days}-day standard borrow period"
     return True, f"'{book['title']}' successfully issued to {target_user['name']} ({term_note}).\nDue date: {due_d.strftime('%b %d, %Y')}."
 
 
 def reserve_book(user, book_id):
-    """Process a book hold/reservation directly from the catalog."""
+    """Process a book reservation/waitlist directly from the catalog."""
     book = find_book_by_id(book_id)
     if not book:
         return False, "Book not found."
 
+    # Prevent duplicate active reservations by the same user for the same book
+    active_existing = any(
+        r for r in reservations
+        if r["username"] == user["username"] and r["book_id"] == book["id"] and r["status"] in ("Waiting for Stock", "Ready for Pickup", "Pending")
+    )
+    if active_existing:
+        return False, f"You already have an active reservation for '{book['title']}'."
+
+    next_res_id = max([r.get("id", 0) for r in reservations], default=0) + 1
+    init_status = "Ready for Pickup" if book.get("copies", 0) > 0 else "Waiting for Stock"
     res = {
-        "id": len(reservations) + 1,
+        "id": next_res_id,
         "username": user["username"],
         "name": user["name"],
+        "role": user.get("role", "student"),
+        "course": user.get("department") or user.get("course", "Student"),
         "book_id": book["id"],
         "book_title": book["title"],
+        "shelf": book.get("shelf", "Shelf A-1"),
         "date_requested": date.today().strftime("%Y-%m-%d"),
-        "status": "Pending"
+        "status": init_status
     }
     reservations.append(res)
-    return True, f"Reservation for '{book['title']}' submitted successfully!"
+    if init_status == "Ready for Pickup":
+        msg = f"Reservation placed! '{book['title']}' has copies available and is ready for pickup at the library desk."
+    else:
+        msg = f"Waitlist reservation placed for '{book['title']}'! You will be notified when copies are restocked or returned."
+    return True, msg
+
+
+def fulfill_reservation(reservation_id):
+    """
+    Librarian Action: Fulfills a reservation by officially issuing the book to the reserving user.
+    Deducts 1 copy from shelf stock, records the borrow loan, and marks reservation as Fulfilled.
+    """
+    try:
+        resid = int(reservation_id)
+    except (ValueError, TypeError):
+        return False, "Invalid reservation ID."
+
+    res = next((r for r in reservations if r.get("id") == resid), None)
+    if not res:
+        return False, f"Reservation #{reservation_id} not found."
+
+    if res.get("status") in ("Fulfilled", "Cancelled"):
+        return False, f"Cannot fulfill: Reservation is already marked as '{res.get('status')}'."
+
+    book = find_book_by_id(res["book_id"])
+    if not book or book.get("copies", 0) <= 0:
+        return False, f"Cannot fulfill: '{res['book_title']}' has 0 copies available on the shelf. Please restock copies first."
+
+    target_user = find_user_by_username(res["username"])
+    if not target_user:
+        target_user = {
+            "username": res["username"],
+            "name": res["name"],
+            "role": res.get("role", "student"),
+            "course": res.get("course", "Student")
+        }
+
+    is_teacher = target_user.get("role") == "teacher"
+    max_limit = TEACHER_MAX_LIMIT if is_teacher else MAX_BORROW_LIMIT
+    loan_days = TEACHER_BORROW_DAYS if is_teacher else BORROW_DAYS
+
+    active_loans = [
+        r for r in borrow_records
+        if r["username"] == target_user["username"] and r["status"] == "Borrowed"
+    ]
+    if len(active_loans) >= max_limit:
+        role_label = "Faculty" if is_teacher else "Student"
+        return False, f"Borrow limit reached: {target_user['name']} already has {len(active_loans)} active borrowed books (max {max_limit})."
+
+    # Deduct 1 physical copy
+    book["copies"] -= 1
+    borrow_d = date.today()
+    due_d = borrow_d + timedelta(days=loan_days)
+
+    next_id = max([r.get("record_id", 0) for r in borrow_records], default=0) + 1
+    record = {
+        "record_id": next_id,
+        "username": target_user["username"],
+        "name": target_user["name"],
+        "role": target_user.get("role", "student"),
+        "course": target_user.get("department") or target_user.get("course", "Member"),
+        "book_id": book["id"],
+        "book_title": book["title"],
+        "shelf": book.get("shelf", "Shelf A-1"),
+        "request_date": borrow_d.strftime("%Y-%m-%d"),
+        "borrow_date": borrow_d.strftime("%Y-%m-%d"),
+        "due_date": due_d.strftime("%Y-%m-%d"),
+        "return_date": None,
+        "status": "Borrowed",
+        "fine": 0.0
+    }
+    borrow_records.append(record)
+
+    res["status"] = "Fulfilled"
+    res["fulfilled_date"] = borrow_d.strftime("%Y-%m-%d")
+
+    term_note = f"{loan_days}-day faculty borrow period" if is_teacher else f"{loan_days}-day standard borrow period"
+    return True, f"Reservation fulfilled! '{book['title']}' officially issued to {target_user['name']} ({term_note}). Return deadline: {due_d.strftime('%b %d, %Y')}."
+
+
+def cancel_reservation(reservation_id, username=None):
+    """Cancels an active reservation (by librarian or by student)."""
+    try:
+        resid = int(reservation_id)
+    except (ValueError, TypeError):
+        return False, "Invalid reservation ID."
+
+    res = next((r for r in reservations if r.get("id") == resid), None)
+    if not res:
+        return False, f"Reservation #{reservation_id} not found."
+
+    if username and res.get("username") != username:
+        return False, "You do not have permission to cancel this reservation."
+
+    if res.get("status") in ("Fulfilled", "Cancelled"):
+        return False, f"Reservation is already marked as '{res.get('status')}'."
+
+    res["status"] = "Cancelled"
+    return True, f"Reservation #{reservation_id} for '{res['book_title']}' has been cancelled."
 
 
 def return_borrowed_book(record_id):
@@ -442,6 +574,7 @@ def return_borrowed_book(record_id):
     book = find_book_by_id(record["book_id"])
     if book:
         book["copies"] += 1
+        sync_book_reservations(book["id"])
 
     if is_overdue:
         msg = f"Book returned overdue by {overdue_days} day(s).\nOverdue penalty fee: {overdue_days} days x P{FINE_RATE:.2f} = P{fine:.2f}"
@@ -471,7 +604,10 @@ def get_all_borrow_records():
 
 
 def get_all_reservations():
-    """Retrieve all book reservations."""
+    """Retrieve all book reservations, syncing available stock."""
+    for b in books:
+        if b.get("copies", 0) > 0:
+            sync_book_reservations(b["id"])
     return reservations
 
 
@@ -548,7 +684,7 @@ def request_book_acquisition(user, title, author, category, reason):
         "status": "Pending Review"
     }
     acquisitions.append(acq)
-    return True, f"Acquisition request for '{title}' submitted to Librarian for review!"
+    return True, f"Book purchase request for '{title}' submitted to Librarian for review!"
 
 
 def get_all_acquisitions(teacher_username=None):
@@ -582,7 +718,7 @@ def approve_acquisition_request(acq_id, shelf="Shelf A-1", copies=3):
     }
     books.append(new_book)
     acq["status"] = "Approved & Added"
-    return True, f"Acquisition approved! '{acq['title']}' officially added to inventory with {new_book['copies']} copies on {new_book['shelf']}."
+    return True, f"Request approved! '{acq['title']}' officially added to catalog inventory with {new_book['copies']} copies on {new_book['shelf']}."
 
 
 def reject_acquisition_request(acq_id, reason="Budget / policy constraints"):
@@ -599,7 +735,7 @@ def reject_acquisition_request(acq_id, reason="Budget / policy constraints"):
         return False, f"Cannot reject: Request is already marked as '{acq['status']}'."
 
     acq["status"] = "Declined"
-    return True, f"Acquisition request for '{acq['title']}' declined."
+    return True, f"Book request for '{acq['title']}' declined."
 
 
 # ================= LIBRARIAN ANALYTICS & DASHBOARD METRICS =================
@@ -630,7 +766,7 @@ def get_analytics_metrics():
             if today > due_d:
                 overdue_books += 1
 
-    pending_reservations = sum(1 for res in reservations if res["status"] == "Pending")
+    pending_reservations = sum(1 for res in reservations if res["status"] in ("Pending", "Waiting for Stock", "Ready for Pickup"))
 
     return {
         "total_titles": total_titles,

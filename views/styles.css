@@ -531,11 +531,31 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+  user-select: none;
 }
 .metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  border-color: #94a3b8;
+}
+.metric-card:active {
+  transform: translateY(0);
+}
+
+.metric-action-hint {
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  opacity: 0.75;
+}
+.metric-card:hover .metric-action-hint {
+  opacity: 1;
+  text-decoration: underline;
 }
 
 .metric-info {
@@ -789,6 +809,8 @@ tbody tr.selected {
 .badge-faculty { background: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe; }
 .badge-student { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
 .badge-recommended { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+.badge-course { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+.badge-date { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
 
 .card-purple { border-left: 4px solid #8b5cf6; }
 .card-purple .metric-icon-wrap { background: #f5f3ff; color: #8b5cf6; }

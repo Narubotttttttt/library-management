@@ -42,7 +42,7 @@
             <line x1="16" y1="17" x2="8" y2="17"></line>
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
-          Instructional Loans
+          My Borrowed Books
           <span class="nav-badge" id="badge-active-loans" style="background: #6366f1;">0</span>
         </button>
 
@@ -60,7 +60,7 @@
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
           </svg>
-          Book Acquisitions
+          Request New Books
         </button>
       </nav>
 
@@ -90,11 +90,11 @@
       <header class="topbar">
         <div>
           <div class="topbar-title" id="page-title">Library Catalog</div>
-          <div class="topbar-subtitle" id="page-subtitle">Browse collection, borrow teaching references, and recommend books for syllabi</div>
+          <div class="topbar-subtitle" id="page-subtitle">Browse collection, borrow teaching references, and recommend textbooks for courses</div>
         </div>
         <div style="display: flex; gap: 8px;">
           <span class="badge badge-faculty" style="font-size: 0.8rem; padding: 6px 12px;">
-            Faculty Loan Privilege: 14 Days &bull; Max 5 Books &bull; Fine Exempt
+            Faculty Borrow Privilege: 14 Days &bull; Max 5 Books &bull; No Overdue Fines
           </span>
         </div>
       </header>
@@ -133,7 +133,7 @@
               <thead>
                 <tr>
                   <th style="width: 50px;">ID</th>
-                  <th>Book Title & Recommended Syllabus</th>
+                  <th>Book Title & Recommended Course</th>
                   <th>Author</th>
                   <th>Category</th>
                   <th>Shelf Location</th>
@@ -147,13 +147,13 @@
         </div>
       </section>
 
-      <!-- SECTION 2: MY INSTRUCTIONAL LOANS -->
+      <!-- SECTION 2: MY BORROWED BOOKS -->
       <section id="section-loans" class="page-section" style="display: none;">
         <div class="toolbar">
           <div>
-            <div style="font-weight: 700; color: #1e293b;">Active Faculty Instructional Borrowings</div>
+            <div style="font-weight: 700; color: #1e293b;">Faculty Borrowed Books &amp; Returns</div>
             <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
-              Teacher loans are active for 14 days for curriculum research. No overdue fines are charged on instructional loans.
+              Faculty borrow period is 14 days for curriculum and teaching references. Faculty members are exempt from overdue fines.
             </div>
           </div>
           <div class="badge badge-faculty" style="padding: 6px 14px; font-size: 0.85rem;">
@@ -184,7 +184,7 @@
       <section id="section-recommendations" class="page-section" style="display: none;">
         <div class="toolbar">
           <div>
-            <div style="font-weight: 700; color: #1e293b;">Course Reading Lists & Syllabus Recommendations</div>
+            <div style="font-weight: 700; color: #1e293b;">Course Reading Lists &amp; Recommended Textbooks</div>
             <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
               Books tagged here appear highlighted with recommendations in the Student Catalog.
             </div>
@@ -205,7 +205,7 @@
                   <th style="width: 50px;">ID</th>
                   <th>Recommended Book</th>
                   <th>Subject / Course Level</th>
-                  <th>Curriculum Notes / Syllabus Instructions</th>
+                  <th>Teacher Notes / Instructions</th>
                   <th>Date Added</th>
                   <th style="text-align: right;">Action</th>
                 </tr>
@@ -220,9 +220,9 @@
       <section id="section-acquisitions" class="page-section" style="display: none;">
         <div class="toolbar">
           <div>
-            <div style="font-weight: 700; color: #1e293b;">Faculty Book Purchase / Acquisition Requests</div>
+            <div style="font-weight: 700; color: #1e293b;">Request New Books for Curriculum</div>
             <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
-              Request new books not currently in the catalog. The Librarian will review and acquire approved references.
+              Request new textbooks not currently in the library catalog. The Librarian will review and add approved books to the shelves.
             </div>
           </div>
           <button class="btn btn-teal" id="btn-add-acq-dialog">
@@ -243,7 +243,7 @@
                   <th>Book Title</th>
                   <th>Author</th>
                   <th>Category</th>
-                  <th>Educational Need / Syllabus Justification</th>
+                  <th>Reason for Request</th>
                   <th>Request Date</th>
                   <th>Status</th>
                 </tr>
@@ -260,7 +260,7 @@
   <div id="modal-recommend" class="modal-backdrop" style="display: none;">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title">Recommend Book for Course / Syllabus</div>
+        <div class="modal-title">Recommend Book for Course / Subject</div>
         <button class="modal-close" onclick="closeModal('modal-recommend')">&times;</button>
       </div>
       <form id="form-recommend">
@@ -290,7 +290,7 @@
   <div id="modal-acquisition" class="modal-backdrop" style="display: none;">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div class="modal-title">Request Library Book Acquisition</div>
+        <div class="modal-title">Request New Book for Library</div>
         <button class="modal-close" onclick="closeModal('modal-acquisition')">&times;</button>
       </div>
       <form id="form-acquisition">
@@ -304,12 +304,23 @@
             <input type="text" id="acq-author" class="form-input" placeholder="e.g. Robert C. Martin" required>
           </div>
           <div class="form-group">
-            <label for="acq-category">Category / Subject Area</label>
-            <input type="text" id="acq-category" class="form-input" placeholder="e.g. Software Engineering / Computer Science">
+            <label for="acq-category">Category / Subject Area *</label>
+            <select id="acq-category" class="form-input" required>
+              <option value="Technology">Technology</option>
+              <option value="Programming">Programming</option>
+              <option value="Science">Science</option>
+              <option value="Mathematics">Mathematics</option>
+              <option value="History">History</option>
+              <option value="Literature">Literature</option>
+              <option value="Business">Business</option>
+              <option value="Agriculture">Agriculture</option>
+              <option value="Education">Education</option>
+              <option value="General Reference">General Reference</option>
+            </select>
           </div>
           <div class="form-group">
-            <label for="acq-reason">Educational Need / Syllabus Justification *</label>
-            <textarea id="acq-reason" class="form-input" style="height: 80px; resize: none;" placeholder="e.g. Required reference textbook for BSIT 3rd Year Capstone Software Architecture module." required></textarea>
+            <label for="acq-reason">Reason for Request (Why is this book needed?) *</label>
+            <textarea id="acq-reason" class="form-input" style="height: 80px; resize: none;" placeholder="e.g. Required reference textbook for BSIT 3rd Year Capstone class." required></textarea>
           </div>
         </div>
         <div class="modal-footer">
@@ -418,10 +429,10 @@
     let isProcessing = false;
 
     const navMeta = {
-      "section-catalog": { title: "Library Catalog", subtitle: "Browse collection, borrow teaching references, and recommend books for syllabi" },
-      "section-loans": { title: "Instructional Loans", subtitle: "Faculty 14-day borrowing history, return deadlines, and zero-penalty loan status" },
-      "section-recommendations": { title: "Course Reading Lists", subtitle: "Manage recommended textbooks and syllabus reference readings for students" },
-      "section-acquisitions": { title: "Book Acquisitions", subtitle: "Submit and monitor new book purchase recommendations for library acquisition" }
+      "section-catalog": { title: "Library Catalog", subtitle: "Browse collection, borrow teaching references, and recommend textbooks for your courses" },
+      "section-loans": { title: "My Borrowed Books", subtitle: "Faculty 14-day borrowing history, return deadlines, and zero-penalty status" },
+      "section-recommendations": { title: "Course Reading Lists", subtitle: "Manage recommended textbooks and required course readings for students" },
+      "section-acquisitions": { title: "Request New Books", subtitle: "Submit and track purchase requests for new curriculum textbooks" }
     };
 
     document.addEventListener("DOMContentLoaded", async () => {
@@ -650,7 +661,7 @@
       tbody.innerHTML = "";
 
       if (!loans || loans.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">You currently have no instructional loans or pending requests.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">You currently have no borrowed books or pending requests.</td></tr>`;
         return;
       }
 
@@ -665,7 +676,7 @@
           statusBadge = `<span class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a;">Pending Librarian Approval</span>`;
           actionContent = `<span style="font-size: 0.8rem; color: #d97706; font-weight: 600;">Awaiting Review</span>`;
         } else if (l.status === "Borrowed") {
-          statusBadge = `<span class="badge badge-faculty">Active 14-Day Loan</span>`;
+          statusBadge = `<span class="badge badge-faculty">Borrowed (14 Days)</span>`;
           actionContent = `<button class="btn btn-teal" style="padding: 4px 10px; font-size: 0.78rem;" onclick="returnBook(${l.record_id})">Return Book</button>`;
         } else if (l.status === "Returned") {
           statusBadge = `<span class="badge badge-status-returned">Returned</span>`;

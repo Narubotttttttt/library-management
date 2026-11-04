@@ -135,6 +135,23 @@ class LibraryApi:
     def get_all_reservations(self):
         return backend.get_all_reservations()
 
+    def fulfill_reservation(self, reservation_id):
+        try:
+            rid = int(reservation_id)
+        except (ValueError, TypeError):
+            return {"success": False, "message": f"Invalid reservation ID: {reservation_id}"}
+        success, msg = backend.fulfill_reservation(rid)
+        return {"success": success, "message": msg}
+
+    def cancel_reservation(self, reservation_id):
+        try:
+            rid = int(reservation_id)
+        except (ValueError, TypeError):
+            return {"success": False, "message": f"Invalid reservation ID: {reservation_id}"}
+        uname = self.current_user["username"] if (self.current_user and self.current_user.get("role") != "librarian") else None
+        success, msg = backend.cancel_reservation(rid, uname)
+        return {"success": success, "message": msg}
+
     # Faculty Recommendations
     def get_recommendations(self):
         return backend.get_all_recommendations()

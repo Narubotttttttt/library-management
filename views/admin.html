@@ -63,7 +63,7 @@
             <polyline points="1 20 1 14 7 14"></polyline>
             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
           </svg>
-          Circulation & Loans
+          Borrowed Books
         </button>
 
         <div class="sidebar-section-label">Management</div>
@@ -90,7 +90,7 @@
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
           </svg>
-          Faculty Acquisitions
+          Faculty Book Requests
           <span class="nav-badge" id="badge-pending-acquisitions" style="background: #8b5cf6;">0</span>
         </button>
       </nav>
@@ -121,18 +121,19 @@
       <header class="topbar">
         <div>
           <div class="topbar-title" id="admin-page-title">Dashboard Overview</div>
-          <div class="topbar-subtitle" id="admin-page-subtitle">Real-time metrics, circulation analytics, and catalog health</div>
+          <div class="topbar-subtitle" id="admin-page-subtitle">Real-time metrics, library analytics, and catalog health</div>
         </div>
       </header>
 
       <!-- SECTION 1: DASHBOARD OVERVIEW -->
       <section id="section-dashboard" class="page-section">
-        <!-- 5 Metric Cards -->
+        <!-- 6 Interactive Metric Cards -->
         <div class="metrics-grid">
-          <div class="metric-card card-blue">
+          <div class="metric-card card-blue" onclick="switchSection('section-inventory')" title="Click to view Book Inventory">
             <div class="metric-info">
               <div class="metric-val" id="metric-titles">0</div>
               <div class="metric-label">Total Titles</div>
+              <div class="metric-action-hint">Manage Books &rarr;</div>
             </div>
             <div class="metric-icon-wrap">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -142,10 +143,11 @@
             </div>
           </div>
 
-          <div class="metric-card card-orange">
+          <div class="metric-card card-orange" onclick="switchSection('section-circulation')" title="Click to view Currently Borrowed Books">
             <div class="metric-info">
               <div class="metric-val" id="metric-borrowed">0</div>
-              <div class="metric-label">Active Loans</div>
+              <div class="metric-label">Currently Borrowed</div>
+              <div class="metric-action-hint">View Borrowed List &rarr;</div>
             </div>
             <div class="metric-icon-wrap">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -155,10 +157,11 @@
             </div>
           </div>
 
-          <div class="metric-card card-amber">
+          <div class="metric-card card-amber" onclick="switchSection('section-requests')" title="Click to review Pending Borrow Requests">
             <div class="metric-info">
               <div class="metric-val" id="metric-requests">0</div>
               <div class="metric-label">Pending Requests</div>
+              <div class="metric-action-hint">Review Queue &rarr;</div>
             </div>
             <div class="metric-icon-wrap">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -169,10 +172,11 @@
             </div>
           </div>
 
-          <div class="metric-card card-red">
+          <div class="metric-card card-red" onclick="switchSection('section-circulation')" title="Click to view Overdue Books & Fines">
             <div class="metric-info">
               <div class="metric-val" id="metric-overdue">0</div>
               <div class="metric-label">Overdue Books</div>
+              <div class="metric-action-hint">View Overdue &rarr;</div>
             </div>
             <div class="metric-icon-wrap">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -183,10 +187,11 @@
             </div>
           </div>
 
-          <div class="metric-card card-purple">
+          <div class="metric-card card-purple" onclick="switchSection('section-reservations')" title="Click to view Book Reservations">
             <div class="metric-info">
               <div class="metric-val" id="metric-holds">0</div>
-              <div class="metric-label">Pending Holds</div>
+              <div class="metric-label">Book Reservations</div>
+              <div class="metric-action-hint">View Reservations &rarr;</div>
             </div>
             <div class="metric-icon-wrap">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -195,10 +200,11 @@
             </div>
           </div>
 
-          <div class="metric-card card-teal">
+          <div class="metric-card card-teal" onclick="document.getElementById('card-returned-log').scrollIntoView({ behavior: 'smooth' })" title="Click to view Recently Returned Books">
             <div class="metric-info">
               <div class="metric-val" id="metric-returned">0</div>
               <div class="metric-label">Returned Books</div>
+              <div class="metric-action-hint">Return Log &darr;</div>
             </div>
             <div class="metric-icon-wrap">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -207,6 +213,28 @@
                 <line x1="12" y1="15" x2="12" y2="3"></line>
               </svg>
             </div>
+          </div>
+        </div>
+
+        <!-- Librarian Quick Functions Action Bar -->
+        <div style="margin-top: 14px; margin-bottom: 14px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; background: var(--bg-card); padding: 12px 18px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+          <div style="font-size: 0.88rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            <span>Quick Counter Actions:</span>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="switchSection('section-requests')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              Review Pending Requests &rarr;
+            </button>
+            <button class="btn btn-teal" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openReturnModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+              Record Book Return
+            </button>
+            <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openModal('modal-add-book')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Add New Book
+            </button>
           </div>
         </div>
 
@@ -226,7 +254,7 @@
               <thead>
                 <tr>
                   <th>Request #</th>
-                  <th>Student</th>
+                  <th>Student / Requester</th>
                   <th>Book Title</th>
                   <th>Request Date</th>
                   <th>Stock Available</th>
@@ -239,7 +267,7 @@
         </div>
 
         <!-- Returned Books Log Card on Dashboard -->
-        <div class="table-card" style="margin-top: 16px;">
+        <div class="table-card" id="card-returned-log" style="margin-top: 16px;">
           <div style="padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
             <div style="font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2">
@@ -251,7 +279,7 @@
               <span class="badge" style="background: #ccfbf1; color: #0f766e; border: 1px solid #99f6e4;" id="dashboard-returned-count">0 returned</span>
             </div>
             <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" onclick="document.querySelector('[data-target=section-circulation]').click();">
-              View Circulation Desk &rarr;
+              View Borrowed Books &rarr;
             </button>
           </div>
           <div class="table-container">
@@ -347,22 +375,16 @@
         </div>
       </section>
 
-      <!-- SECTION 4: CIRCULATION DESK (Active Approved Loans) -->
+      <!-- SECTION 4: BORROWED BOOKS & RETURNS -->
       <section id="section-circulation" class="page-section" style="display: none;">
         <div class="toolbar">
-          <div style="font-weight: 700; color: #1e293b;">Active Loans & Return Processing</div>
+          <div style="font-weight: 700; color: #1e293b;">Currently Borrowed Books & Return Processing</div>
           <div class="toolbar-actions">
-            <button class="btn btn-primary" id="btn-issue-book-dialog">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 5v14M5 12h14"></path>
-              </svg>
-              Issue Book (Walk-in)
-            </button>
-            <button class="btn btn-success" id="btn-record-return-dialog">
+            <button class="btn btn-teal" id="btn-record-return-dialog">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
-              Record Returned Book
+              Record Book Return
             </button>
           </div>
         </div>
@@ -415,7 +437,7 @@
       <!-- SECTION 6: RESERVATIONS LIST -->
       <section id="section-reservations" class="page-section" style="display: none;">
         <div class="toolbar">
-          <div style="font-weight: 700; color: #1e293b;">Book Holds &amp; Waitlist Requests</div>
+          <div style="font-weight: 700; color: #1e293b;">Book Reservations &amp; Waitlist Requests</div>
         </div>
 
         <div class="table-card" style="flex: 1;">
@@ -423,12 +445,13 @@
             <table>
               <thead>
                 <tr>
-                  <th>Hold ID</th>
-                  <th>Student ID</th>
-                  <th>Student Name</th>
+                  <th>Reservation #</th>
+                  <th>Student / Borrower</th>
                   <th>Book Title</th>
+                  <th>Stock on Shelf</th>
                   <th>Requested Date</th>
                   <th>Status</th>
+                  <th style="text-align: right;">Action</th>
                 </tr>
               </thead>
               <tbody id="reservations-tbody"></tbody>
@@ -437,11 +460,11 @@
         </div>
       </section>
 
-      <!-- SECTION 7: FACULTY ACQUISITIONS -->
+      <!-- SECTION 7: FACULTY BOOK REQUESTS -->
       <section id="section-acquisitions" class="page-section" style="display: none;">
         <div class="toolbar">
           <div>
-            <div style="font-weight: 700; color: #1e293b;">Faculty Book Purchase / Acquisition Recommendations</div>
+            <div style="font-weight: 700; color: #1e293b;">Faculty Book Purchase &amp; New Title Requests</div>
             <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
               Review textbooks requested by teachers. Approving automatically adds the book into inventory with assigned shelf and stock.
             </div>
@@ -459,7 +482,7 @@
                   <th>Requested Book</th>
                   <th>Author</th>
                   <th>Category</th>
-                  <th>Curriculum Justification</th>
+                  <th>Reason for Request</th>
                   <th>Date</th>
                   <th>Status</th>
                   <th style="text-align: right;">Review Action</th>
@@ -490,7 +513,7 @@
               <input type="text" id="acq-shelf" class="form-input" value="Shelf A-1" required>
             </div>
             <div class="form-group">
-              <label for="acq-copies">Number of Copies to Acquire *</label>
+              <label for="acq-copies">Number of Copies to Add to Shelf *</label>
               <input type="number" id="acq-copies" class="form-input" value="3" min="1" max="50" required>
             </div>
           </div>
@@ -506,7 +529,7 @@
     <div id="modal-add-book" class="modal-backdrop" style="display: none;">
       <div class="modal-dialog">
         <div class="modal-header">
-          <div class="modal-title">Add New Book Acquisition</div>
+          <div class="modal-title">Add New Book to Catalog</div>
           <button class="modal-close" onclick="closeModal('modal-add-book')">&times;</button>
         </div>
         <form id="form-add-book">
@@ -520,8 +543,19 @@
               <input type="text" id="book-author" class="form-input" placeholder="e.g. Robert C. Martin" required>
             </div>
             <div class="form-group">
-              <label for="book-category">Category</label>
-              <input type="text" id="book-category" class="form-input" placeholder="e.g. Software Engineering">
+              <label for="book-category">Category *</label>
+              <select id="book-category" class="form-input" required>
+                <option value="Technology">Technology</option>
+                <option value="Programming">Programming</option>
+                <option value="Science">Science</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="History">History</option>
+                <option value="Literature">Literature</option>
+                <option value="Business">Business</option>
+                <option value="Agriculture">Agriculture</option>
+                <option value="Education">Education</option>
+                <option value="General Reference">General Reference</option>
+              </select>
             </div>
             <div class="form-group">
               <label for="book-shelf">Shelf Location</label>
@@ -563,32 +597,6 @@
       </div>
     </div>
 
-    <!-- Modal: Issue Book to Walk-in Student -->
-    <div id="modal-issue" class="modal-backdrop" style="display: none;">
-      <div class="modal-dialog">
-        <div class="modal-header">
-          <div class="modal-title">Direct Walk-in: Issue Book to Student</div>
-          <button class="modal-close" onclick="closeModal('modal-issue')">&times;</button>
-        </div>
-        <form id="form-issue">
-          <div class="modal-body">
-            <div class="form-group">
-              <label for="issue-book-select">Select Book *</label>
-              <select id="issue-book-select" class="form-input" required></select>
-            </div>
-            <div class="form-group">
-              <label for="issue-student-select">Select Student *</label>
-              <select id="issue-student-select" class="form-input" required></select>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline" onclick="closeModal('modal-issue')">Cancel</button>
-            <button type="submit" class="btn btn-primary">Issue Book</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
     <!-- Modal: Return Book (Admin) -->
     <div id="modal-return" class="modal-backdrop" style="display: none;">
       <div class="modal-dialog wide">
@@ -598,14 +606,14 @@
         </div>
         <div class="modal-body">
           <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
-            Select an active loan to record return. Overdue penalties are automatically calculated at ₱10.00 / day.
+            Select a borrowed book to record return. Overdue penalties are automatically calculated at ₱10.00 / day.
           </p>
           <div class="table-card">
             <div class="table-container">
               <table>
                 <thead>
                   <tr>
-                    <th>Loan #</th>
+                    <th>Record #</th>
                     <th>Borrower</th>
                     <th>Book Title</th>
                     <th>Due Date</th>
@@ -717,18 +725,39 @@
       if (el) el.style.display = "none";
     }
 
+    function switchSection(sectionId) {
+      const btn = document.querySelector(`.sidebar .nav-item[data-target="${sectionId}"]`);
+      if (btn) {
+        btn.click();
+      } else {
+        document.querySelectorAll(".sidebar .nav-item").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".page-section").forEach((s) => (s.style.display = "none"));
+        const secEl = document.getElementById(sectionId);
+        if (secEl) secEl.style.display = "flex";
+      }
+    }
+    window.switchSection = switchSection;
+
+    async function openReturnModal() {
+      if (typeof loadReturnAdminTable === "function") {
+        await loadReturnAdminTable();
+      }
+      openModal("modal-return");
+    }
+    window.openReturnModal = openReturnModal;
+
     // --- Admin Dashboard Logic ---
     let currentAdmin = null;
     let selectedBookId = null;
 
     const adminNavMeta = {
-      "section-dashboard": { title: "Dashboard Overview", subtitle: "Real-time metrics, circulation analytics, and catalog health" },
-      "section-requests": { title: "Borrow Requests Queue", subtitle: "Review and approve book loan requests from students and faculty" },
-      "section-inventory": { title: "Book Inventory Management", subtitle: "Add new acquisitions, track stock copies, and manage shelves" },
-      "section-circulation": { title: "Circulation Desk & Loans", subtitle: "Manage active issued loans, return dates, and penalty fines" },
+      "section-dashboard": { title: "Dashboard Overview", subtitle: "Real-time metrics, library analytics, and catalog health" },
+      "section-requests": { title: "Borrow Requests Queue", subtitle: "Review and approve book requests from students and faculty" },
+      "section-inventory": { title: "Book Inventory Management", subtitle: "Add new books, track stock copies, and manage shelves" },
+      "section-circulation": { title: "Borrowed Books & Returns", subtitle: "Manage currently borrowed books, return dates, and penalty fines" },
       "section-students": { title: "Student Directory", subtitle: "Roster of all registered students, courses, and contact information" },
-      "section-reservations": { title: "Book Reservations & Holds", subtitle: "Queue of student hold requests for out-of-stock titles" },
-      "section-acquisitions": { title: "Faculty Book Acquisitions", subtitle: "Review, approve, and add curriculum textbooks requested by teachers" }
+      "section-reservations": { title: "Book Reservations", subtitle: "Queue of student book reservations for out-of-stock titles" },
+      "section-acquisitions": { title: "Faculty Book Requests", subtitle: "Review, approve, and add curriculum textbooks requested by teachers" }
     };
 
     document.addEventListener("DOMContentLoaded", async () => {
@@ -868,40 +897,6 @@
         }
       });
 
-      document.getElementById("btn-issue-book-dialog").addEventListener("click", async () => {
-        const [books, students] = await Promise.all([callApi("get_books"), callApi("get_all_students")]);
-        const inStock = books.filter((b) => b.copies > 0);
-
-        if (inStock.length === 0) {
-          showToast("No books currently in stock to issue.", "error");
-          return;
-        }
-
-        const bSelect = document.getElementById("issue-book-select");
-        bSelect.innerHTML = inStock.map((b) => `<option value="${b.id}">${b.title} (${b.copies} available)</option>`).join("");
-
-        const sSelect = document.getElementById("issue-student-select");
-        sSelect.innerHTML = students.map((s) => `<option value="${s.username}">${s.name} (${s.username} - ${s.course || 'Student'})</option>`).join("");
-
-        openModal("modal-issue");
-      });
-
-      document.getElementById("form-issue").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const bookId = parseInt(document.getElementById("issue-book-select").value);
-        const studentId = document.getElementById("issue-student-select").value;
-
-        const res = await callApi("issue_book", studentId, bookId);
-        if (res && res.success) {
-          showToast(res.message, "success");
-          closeModal("modal-issue");
-          await refreshDashboard();
-          await loadCirculation();
-        } else {
-          showToast(res ? res.message : "Issue failed", "error");
-        }
-      });
-
       document.getElementById("btn-record-return-dialog").addEventListener("click", async () => {
         await loadReturnAdminTable();
         openModal("modal-return");
@@ -938,28 +933,50 @@
       tbody.innerHTML = "";
 
       if (pendingReqs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 22px;">No pending borrow requests right now.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 26px;">No pending borrow requests right now. When a student submits a request, it will appear here immediately.</td></tr>`;
       } else {
-        pendingReqs.slice(0, 5).forEach((r) => {
+        pendingReqs.slice(0, 6).forEach((r) => {
           const book = (books || []).find((b) => b.id === r.book_id);
           const copies = book ? book.copies : 0;
           const recId = r.record_id || r.id;
+          const isTeacher = r.role === "teacher";
+          const roleBadge = isTeacher
+            ? `<span class="badge badge-faculty" style="font-size: 0.68rem;">Faculty (14 Days)</span>`
+            : `<span class="badge badge-student" style="font-size: 0.68rem;">Student (7 Days)</span>`;
+          const courseBadge = r.course
+            ? `<span class="badge badge-course" style="font-size: 0.68rem;">${r.course}</span>`
+            : "";
+          const shelfBadge = (book && book.shelf)
+            ? `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">📍 ${book.shelf}</div>`
+            : "";
+
           const tr = document.createElement("tr");
           tr.innerHTML = `
-            <td style="font-weight: bold; color: var(--text-muted);">#${recId}</td>
-            <td style="font-weight: 600;">${r.name} (${r.username})</td>
-            <td>${r.book_title}</td>
-            <td>${r.request_date || 'Today'}</td>
-            <td><span class="badge ${copies > 0 ? 'badge-stock' : 'badge-out'}">${copies} in stock</span></td>
+            <td style="font-weight: bold; color: var(--text-muted); font-family: monospace;">#${recId}</td>
+            <td>
+              <div style="font-weight: 600; color: #0f172a;">${r.name} <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">(${r.username})</span></div>
+              <div style="display: flex; gap: 4px; margin-top: 3px; align-items: center; flex-wrap: wrap;">
+                ${roleBadge}
+                ${courseBadge}
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: #1e293b;">${r.book_title}</div>
+              ${shelfBadge}
+            </td>
+            <td><span class="badge badge-date" style="font-size: 0.72rem;">📅 ${r.request_date || "Today"}</span></td>
+            <td><span class="badge ${copies > 0 ? "badge-stock" : "badge-out"}">${copies} in stock</span></td>
             <td style="text-align: right;">
-              <button class="btn btn-success" style="padding: 3px 8px; font-size: 0.75rem;" onclick="approveBorrowRequest(${recId})">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                Approve
-              </button>
-              <button class="btn btn-danger-outline" style="padding: 3px 8px; font-size: 0.75rem; margin-left: 4px;" onclick="rejectBorrowRequest(${recId})">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                Reject
-              </button>
+              <div style="display: flex; gap: 5px; justify-content: flex-end;">
+                <button class="btn btn-success" style="padding: 4px 10px; font-size: 0.75rem;" onclick="approveBorrowRequest(${recId})" title="Approve Request & Issue Book">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  Approve
+                </button>
+                <button class="btn btn-danger-outline" style="padding: 4px 10px; font-size: 0.75rem;" onclick="rejectBorrowRequest(${recId})" title="Reject Request">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  Reject
+                </button>
+              </div>
             </td>
           `;
           tbody.appendChild(tr);
@@ -1022,8 +1039,8 @@
         const recId = r.record_id || r.id;
         const isTeacher = r.role === "teacher";
         const roleBadge = isTeacher 
-          ? `<span class="badge badge-faculty" style="font-size: 0.7rem; margin-left: 6px;">Faculty (14d)</span>` 
-          : `<span class="badge badge-student" style="font-size: 0.7rem; margin-left: 6px;">Student (7d)</span>`;
+          ? `<span class="badge badge-faculty" style="font-size: 0.7rem; margin-left: 6px;">Faculty (14 Days)</span>` 
+          : `<span class="badge badge-student" style="font-size: 0.7rem; margin-left: 6px;">Student (7 Days)</span>`;
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -1148,7 +1165,7 @@
       tbody.innerHTML = "";
 
       if (!activeOrPast || activeOrPast.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 20px;">No issued loan records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 20px;">No borrowed book records found.</td></tr>`;
         return;
       }
 
@@ -1157,7 +1174,7 @@
         const isReturned = r.status === "Returned";
         const statusBadge = isReturned
           ? `<span class="badge badge-status-returned">Returned</span>`
-          : `<span class="badge badge-status-borrowed">Active Loan</span>`;
+          : `<span class="badge badge-status-borrowed">Borrowed</span>`;
 
         const fineDisplay = (r.fine && r.fine > 0)
           ? `<span style="color: #dc2626; font-weight: bold;">₱${r.fine.toFixed(2)}</span>` 
@@ -1201,28 +1218,91 @@
     }
 
     async function loadReservations() {
-      const reservations = await callApi("get_all_reservations");
+      const [reservations, books] = await Promise.all([callApi("get_all_reservations"), callApi("get_books")]);
       const tbody = document.getElementById("reservations-tbody");
       tbody.innerHTML = "";
 
       if (!reservations || reservations.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">No pending holds or reservations.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No book reservations currently in the queue.</td></tr>`;
         return;
       }
 
       reservations.forEach((res) => {
+        const book = (books || []).find((b) => b.id === res.book_id);
+        const copies = book ? book.copies : 0;
+        
+        let statusBadge = "";
+        if (res.status === "Ready for Pickup") {
+          statusBadge = `<span class="badge badge-stock" style="font-weight: 700;">✓ Ready for Pickup</span>`;
+        } else if (res.status === "Waiting for Stock" || res.status === "Pending") {
+          statusBadge = `<span class="badge badge-status-pending">⏳ Waiting for Stock</span>`;
+        } else if (res.status === "Fulfilled") {
+          statusBadge = `<span class="badge badge-status-returned">Fulfilled (Issued)</span>`;
+        } else if (res.status === "Cancelled") {
+          statusBadge = `<span class="badge" style="background: #f1f5f9; color: #64748b;">Cancelled</span>`;
+        } else {
+          statusBadge = `<span class="badge badge-shelf">${res.status}</span>`;
+        }
+
+        let actionBtn = "";
+        if (res.status === "Ready for Pickup" || res.status === "Waiting for Stock" || res.status === "Pending") {
+          const canFulfill = copies > 0;
+          actionBtn = `
+            <button class="btn btn-success" style="padding: 4px 10px; font-size: 0.75rem;" onclick="adminFulfillReservation(${res.id})" title="${canFulfill ? 'Officially issue copy to student' : 'Restock book first before issuing'}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Issue Book (Fulfill)
+            </button>
+            <button class="btn btn-danger-outline" style="padding: 4px 10px; font-size: 0.75rem; margin-left: 4px;" onclick="adminCancelReservation(${res.id})" title="Cancel this reservation">
+              Cancel
+            </button>
+          `;
+        } else if (res.status === "Fulfilled") {
+          actionBtn = `<span style="font-size: 0.78rem; color: #15803d; font-weight: 600;">✓ Completed</span>`;
+        } else if (res.status === "Cancelled") {
+          actionBtn = `<span style="font-size: 0.78rem; color: var(--text-muted);">Cancelled</span>`;
+        }
+
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td style="font-weight: bold;">#${res.id}</td>
-          <td style="font-family: monospace;">${res.username}</td>
-          <td style="font-weight: 600;">${res.name}</td>
-          <td>${res.book_title}</td>
-          <td>${res.date_requested}</td>
-          <td><span class="badge badge-status-pending">${res.status}</span></td>
+          <td style="font-weight: bold; color: var(--text-muted); font-family: monospace;">#${res.id}</td>
+          <td>
+            <div style="font-weight: 600;">${res.name}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">${res.username}</div>
+          </td>
+          <td style="font-weight: 600; color: #1e293b;">${res.book_title}</td>
+          <td><span class="badge ${copies > 0 ? 'badge-stock' : 'badge-out'}">${copies} in stock</span></td>
+          <td><span class="badge badge-date" style="font-size: 0.72rem;">📅 ${res.date_requested || 'Today'}</span></td>
+          <td>${statusBadge}</td>
+          <td style="text-align: right;">${actionBtn}</td>
         `;
         tbody.appendChild(tr);
       });
     }
+
+    async function adminFulfillReservation(resId) {
+      const res = await callApi("fulfill_reservation", Number(resId));
+      if (res && res.success) {
+        showToast(res.message, "success");
+        await loadReservations();
+        await refreshDashboard();
+        await loadCirculation();
+      } else {
+        showToast(res ? res.message : "Fulfillment failed", "error");
+      }
+    }
+    window.adminFulfillReservation = adminFulfillReservation;
+
+    async function adminCancelReservation(resId) {
+      const res = await callApi("cancel_reservation", Number(resId));
+      if (res && res.success) {
+        showToast(res.message, "info");
+        await loadReservations();
+        await refreshDashboard();
+      } else {
+        showToast(res ? res.message : "Cancel failed", "error");
+      }
+    }
+    window.adminCancelReservation = adminCancelReservation;
 
     async function loadReturnAdminTable() {
       const records = await callApi("get_all_borrow_records");
@@ -1284,7 +1364,7 @@
       tbody.innerHTML = "";
 
       if (!acqs || acqs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 28px;">No faculty book acquisition requests found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 28px;">No faculty book requests found.</td></tr>`;
         return;
       }
 
@@ -1333,7 +1413,7 @@
         <strong>Title:</strong> ${acq.title}<br>
         <strong>Author:</strong> ${acq.author} &bull; <strong>Category:</strong> ${acq.category}<br>
         <strong>Requested by:</strong> ${acq.teacher_name} (${acq.department})<br>
-        <strong>Need:</strong> ${acq.reason}
+        <strong>Reason:</strong> ${acq.reason}
       `;
       openModal("modal-approve-acq");
     }
@@ -1352,6 +1432,36 @@
     window.loadAcquisitionsAdmin = loadAcquisitionsAdmin;
     window.openApproveAcquisitionDialog = openApproveAcquisitionDialog;
     window.rejectAcquisition = rejectAcquisition;
+
+    // Auto-refresh polling loop (every 3 seconds) for live real-time sync with student/teacher actions
+    let isAutoRefreshing = false;
+    setInterval(async () => {
+      if (isAutoRefreshing || isProcessingRequest || isProcessingReturn) return;
+      const dashSec = document.getElementById("section-dashboard");
+      const reqSec = document.getElementById("section-requests");
+      const activeModal = document.querySelector(".modal-backdrop[style*='display: flex']");
+      if (activeModal) return; // Don't interrupt open dialogs
+
+      if (dashSec && dashSec.style.display !== "none") {
+        try {
+          isAutoRefreshing = true;
+          await refreshDashboard();
+        } catch (e) {
+          console.error("Dashboard auto-refresh error:", e);
+        } finally {
+          isAutoRefreshing = false;
+        }
+      } else if (reqSec && reqSec.style.display !== "none") {
+        try {
+          isAutoRefreshing = true;
+          await loadBorrowRequests();
+        } catch (e) {
+          console.error("Requests auto-refresh error:", e);
+        } finally {
+          isAutoRefreshing = false;
+        }
+      }
+    }, 3000);
   </script>
 </body>
 </html>

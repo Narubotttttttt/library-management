@@ -164,9 +164,9 @@
       <!-- SECTION 3: MY RESERVATIONS (Full Page View) -->
       <section id="section-holds" class="page-section" style="display: none;">
         <div class="toolbar">
-          <div style="font-weight: 700; color: #1e293b;">Active Book Holds & Reservations</div>
+          <div style="font-weight: 700; color: #1e293b;">My Book Reservations</div>
           <div style="font-size: 0.8rem; color: var(--text-muted);">
-            Books on hold will be prepared when new copies become available.
+            Reserved books will be prepared when new copies become available on the shelf.
           </div>
         </div>
 
@@ -175,10 +175,11 @@
             <table>
               <thead>
                 <tr>
-                  <th>Hold ID</th>
+                  <th>Reservation #</th>
                   <th>Book Title</th>
                   <th>Requested Date</th>
                   <th>Status</th>
+                  <th style="text-align: right;">Action</th>
                 </tr>
               </thead>
               <tbody id="student-holds-tbody"></tbody>
@@ -268,8 +269,8 @@
 
     const navMeta = {
       "section-catalog": { title: "Book Catalog", subtitle: "Search, explore available shelf copies, and request books from the librarian" },
-      "section-loans": { title: "My Borrowed Books & Requests", subtitle: "Monitor approval status, active loan deadlines, and return items" },
-      "section-holds": { title: "My Holds & Reservations", subtitle: "Track the queue and status of your requested book holds" }
+      "section-loans": { title: "My Borrowed Books & Requests", subtitle: "Monitor approval status, return due dates, and return items" },
+      "section-holds": { title: "My Book Reservations", subtitle: "Track the queue and status of your book reservations" }
     };
 
     // Logout handler accessible from anywhere
@@ -504,7 +505,7 @@
       tbody.innerHTML = "";
 
       if (!loans || loans.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">You currently have no active loans or pending requests.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">You currently have no borrowed books or pending requests.</td></tr>`;
         return;
       }
 
@@ -519,7 +520,7 @@
           statusBadge = `<span class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a;">Pending Librarian Approval</span>`;
           actionContent = `<span style="font-size: 0.8rem; color: #d97706; font-weight: 600;">Awaiting Review</span>`;
         } else if (l.status === "Borrowed") {
-          statusBadge = `<span class="badge badge-status-borrowed">Active Loan</span>`;
+          statusBadge = `<span class="badge badge-status-borrowed">Borrowed</span>`;
           actionContent = `<button class="btn btn-teal" style="padding: 4px 10px; font-size: 0.78rem;" onclick="returnBook(${l.record_id})">Return Book</button>`;
         } else if (l.status === "Returned") {
           statusBadge = `<span class="badge badge-status-returned">Returned</span>`;
@@ -571,26 +572,57 @@
       tbody.innerHTML = "";
 
       if (myReservations.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">No active holds or reservations found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">No active book reservations found.</td></tr>`;
         return;
       }
 
       myReservations.forEach((r) => {
+        let statusBadge = "";
+        let actionContent = "";
+        if (r.status === "Ready for Pickup") {
+          statusBadge = `<span class="badge badge-stock" style="font-weight: 700;">✓ Ready for Pickup!</span>`;
+          actionContent = `<span style="font-size: 0.8rem; color: #15803d; font-weight: 600;">Visit Library Desk</span>`;
+        } else if (r.status === "Waiting for Stock" || r.status === "Pending") {
+          statusBadge = `<span class="badge badge-status-pending">⏳ Waiting for Stock</span>`;
+          actionContent = `<button class="btn btn-danger-outline" style="padding: 4px 10px; font-size: 0.75rem;" onclick="cancelMyReservation(${r.id})">Cancel</button>`;
+        } else if (r.status === "Fulfilled") {
+          statusBadge = `<span class="badge badge-status-returned">Fulfilled (Borrowed)</span>`;
+          actionContent = `<span style="font-size: 0.8rem; color: var(--text-muted);">Completed</span>`;
+        } else if (r.status === "Cancelled") {
+          statusBadge = `<span class="badge" style="background: #f1f5f9; color: #64748b;">Cancelled</span>`;
+          actionContent = `<span style="font-size: 0.8rem; color: var(--text-muted);">-</span>`;
+        } else {
+          statusBadge = `<span class="badge badge-shelf">${r.status}</span>`;
+          actionContent = `-`;
+        }
+
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td style="font-weight: bold; color: var(--text-muted);">#${r.id}</td>
+          <td style="font-weight: bold; color: var(--text-muted); font-family: monospace;">#${r.id}</td>
           <td style="font-weight: 600;">${r.book_title}</td>
-          <td>${r.date_requested}</td>
-          <td><span class="badge badge-status-pending">${r.status}</span></td>
+          <td>${r.date_requested || 'Today'}</td>
+          <td>${statusBadge}</td>
+          <td style="text-align: right;">${actionContent}</td>
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    async function cancelMyReservation(resId) {
+      const res = await callApi("cancel_reservation", Number(resId));
+      if (res && res.success) {
+        showToast(res.message, "info");
+        await loadStudentHolds();
+      } else {
+        showToast(res ? res.message : "Cancel failed", "error");
+      }
     }
 
     // Explicitly bind to global window scope
     window.borrowBook = borrowBook;
     window.reserveBook = reserveBook;
     window.returnBook = returnBook;
+    window.cancelMyReservation = cancelMyReservation;
   </script>
 </body>
 </html>
