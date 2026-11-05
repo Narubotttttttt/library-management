@@ -86,16 +86,25 @@ body {
 }
 
 .sidebar-logo {
-  width: 40px;
-  height: 40px;
-  background: rgba(37, 99, 235, 0.2);
-  border: 1px solid rgba(59, 130, 246, 0.4);
+  width: 42px;
+  height: 42px;
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #60a5fa;
   flex-shrink: 0;
+  overflow: hidden;
+  padding: 2px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.sidebar-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .sidebar-title {
@@ -426,6 +435,27 @@ body {
   align-items: center;
   justify-content: center;
   margin: 0 auto 12px;
+}
+
+.login-logo-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 14px auto;
+}
+
+.login-logo-img {
+  width: 155px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(15, 23, 42, 0.08));
+  transition: transform 0.2s ease;
+}
+
+.login-logo-img:hover {
+  transform: scale(1.02);
 }
 
 .login-title {
