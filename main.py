@@ -7,16 +7,11 @@ _views_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "views")
 
 
 class LibraryApi:
-    """Python bridge exposing backend database operations and view routing to HTML/JS.
-    Note: Window references are kept at module level to avoid .NET reflection recursion.
-    """
 
     def __init__(self):
         self.current_user = None
 
-    # View Navigation
     def navigate(self, view_name):
-        """Routes between views/login.html, views/student.html, and views/admin.html."""
         global _active_window
         target_file = os.path.join(_views_dir, f"{view_name}.html")
         if os.path.exists(target_file) and _active_window:
@@ -24,7 +19,6 @@ class LibraryApi:
             return {"success": True}
         return {"success": False, "message": f"View '{view_name}' not found."}
 
-    # Authentication
     def login(self, username, password):
         user = backend.authenticate_user(username, password)
         if user:
@@ -50,7 +44,6 @@ class LibraryApi:
             print(f"[LibraryApi.get_current_user] error: {e}")
             return None
 
-    # Books & Catalog
     def get_books(self, query=""):
         try:
             if query and isinstance(query, str) and query.strip():
@@ -90,7 +83,6 @@ class LibraryApi:
             "is_overdue": is_overdue
         }
 
-    # Admin Management & Analytics
     def get_admin_metrics(self):
         return backend.get_analytics_metrics()
 
@@ -152,7 +144,6 @@ class LibraryApi:
         success, msg = backend.cancel_reservation(rid, uname)
         return {"success": success, "message": msg}
 
-    # Faculty Recommendations
     def get_recommendations(self):
         return backend.get_all_recommendations()
 
@@ -173,7 +164,6 @@ class LibraryApi:
         success, msg = backend.remove_recommendation(int(rec_id), self.current_user["username"])
         return {"success": success, "message": msg}
 
-    # Faculty Book Acquisition Requests
     def request_acquisition(self, title, author, category, reason):
         if not self.current_user:
             return {"success": False, "message": "Please log in first."}

@@ -1,11 +1,5 @@
-"""
-Backend module for School Library Management System.
-Handles data persistence, automated date/fine calculations, inventory, and circulation.
-"""
-
 from datetime import datetime, timedelta, date
 
-# Sample initial books inventory with shelf locations
 books = [
     {"id": 1, "title": "Introduction to Computer Science", "author": "J. Glenn Brookshear", "category": "Technology", "shelf": "Shelf A-1", "copies": 5},
     {"id": 2, "title": "Python Programming", "author": "John Zelle", "category": "Programming", "shelf": "Shelf A-2", "copies": 4},
@@ -17,7 +11,6 @@ books = [
     {"id": 8, "title": "To Kill a Mockingbird", "author": "Harper Lee", "category": "Literature", "shelf": "Shelf D-1", "copies": 2}
 ]
 
-# Users list (includes admin, registered students, and faculty members)
 users = [
     {
         "username": "admin",
@@ -48,30 +41,22 @@ users = [
     }
 ]
 
-# In-memory storage for active loans, requests, and reservations
 borrow_records = []
 reservations = []
 
-# Faculty & Student Loan Policies
-FINE_RATE = 10.0            # 10 pesos fine per day overdue for students
-BORROW_DAYS = 7             # 7 days standard student loan period
-MAX_BORROW_LIMIT = 3        # Maximum 3 books for students
+FINE_RATE = 10.0
+BORROW_DAYS = 7
+MAX_BORROW_LIMIT = 3
 
-TEACHER_BORROW_DAYS = 14     # 14 days extended faculty loan period
-TEACHER_MAX_LIMIT = 5        # Maximum 5 books for faculty
-TEACHER_FINE_RATE = 0.0      # Faculty members are exempt from overdue fines
+TEACHER_BORROW_DAYS = 14
+TEACHER_MAX_LIMIT = 5
+TEACHER_FINE_RATE = 0.0
 
-# Faculty Course Reading List Recommendations
 recommendations = []
-
-# Faculty Book Purchase / Acquisition Requests
 acquisitions = []
 
 
-# ================= USER / AUTH LOGIC =================
-
 def authenticate_user(username, password):
-    """Authenticate user with username and password."""
     for u in users:
         if u["username"].lower() == username.strip().lower() and u["password"] == password.strip():
             return u
@@ -79,7 +64,6 @@ def authenticate_user(username, password):
 
 
 def register_user(name, username, password, email, course, contact, role="student"):
-    """Register a new student or teacher account."""
     name = name.strip()
     username = username.strip()
     password = password.strip()
@@ -113,29 +97,22 @@ def register_user(name, username, password, email, course, contact, role="studen
 
 
 def register_student(name, student_id, password, email, course, contact, role="student"):
-    """Alias for register_user to maintain backward compatibility."""
     return register_user(name, student_id, password, email, course, contact, role)
 
 
 def get_all_students():
-    """Retrieve all registered student records."""
     return [u for u in users if u.get("role") == "student"]
 
 
 def get_all_faculty():
-    """Retrieve all registered faculty records."""
     return [u for u in users if u.get("role") == "teacher"]
 
 
 def find_user_by_username(username):
-    """Find user dictionary by username."""
     return next((u for u in users if u["username"].lower() == username.strip().lower()), None)
 
 
-# ================= BOOK & INVENTORY LOGIC =================
-
 def _enrich_books_with_meta(book_list):
-    """Attach faculty course recommendation tags to books."""
     rec_map = {}
     for r in recommendations:
         rec_map.setdefault(r["book_id"], []).append({
@@ -154,17 +131,14 @@ def _enrich_books_with_meta(book_list):
 
 
 def get_all_books():
-    """Return all books with faculty recommendation metadata."""
     return _enrich_books_with_meta(books)
 
 
 def find_book_by_id(book_id):
-    """Find a book by its unique ID."""
     return next((b for b in books if b["id"] == int(book_id)), None)
 
 
 def search_books(query):
-    """Filter books by title, author, or category with recommendations."""
     q = query.strip().lower()
     if not q:
         return _enrich_books_with_meta(books)
@@ -176,10 +150,6 @@ def search_books(query):
 
 
 def sync_book_reservations(book_id):
-    """
-    Automatically updates waiting reservations to 'Ready for Pickup'
-    when physical shelf copies become available.
-    """
     book = find_book_by_id(book_id)
     if not book:
         return
@@ -191,7 +161,6 @@ def sync_book_reservations(book_id):
 
 
 def restock_book(book_id, count):
-    """Add stock to an existing book and update waiting reservations."""
     book = find_book_by_id(book_id)
     if not book:
         return False, "Book not found."
@@ -201,7 +170,6 @@ def restock_book(book_id, count):
 
 
 def add_book(title, author, category, shelf, copies):
-    """Add a new book acquisition with shelf location to the inventory."""
     title = title.strip()
     if not title:
         return False, "Title cannot be empty."
@@ -220,7 +188,6 @@ def add_book(title, author, category, shelf, copies):
 
 
 def delete_book(book_id):
-    """Delete a book from inventory."""
     book = find_book_by_id(book_id)
     if not book:
         return False, "Book not found."
@@ -228,15 +195,7 @@ def delete_book(book_id):
     return True, "Book removed from inventory."
 
 
-# ================= AUTOMATED FINE & DATE CALCULATIONS =================
-
 def calculate_overdue_fine(record):
-    """
-    Automated Fine Calculation:
-    Compares the due date with the current system date.
-    Returns: (overdue_days, fine_amount, is_overdue)
-    Faculty/teachers are exempt from overdue fines.
-    """
     if record["status"] != "Borrowed" or not record.get("due_date"):
         return 0, record.get("fine", 0.0), False
 
@@ -253,15 +212,7 @@ def calculate_overdue_fine(record):
     return 0, 0.0, False
 
 
-# ================= BORROW & CIRCULATION LOGIC =================
-
 def request_borrow_book(user, book_id):
-    """
-    Borrow Request Workflow:
-    Submits a borrow request to the Librarian for approval.
-    Stock copy is not deducted until the Librarian approves it.
-    Supports both student (max 3, 7 days) and faculty (max 5, 14 days) policies.
-    """
     book = find_book_by_id(book_id)
     if not book:
         return False, "Book not found."
@@ -269,7 +220,6 @@ def request_borrow_book(user, book_id):
     if book["copies"] <= 0:
         return False, "Out of Stock: Sorry, this book currently has 0 copies available on the shelf.\nYou can place a reservation hold instead."
 
-    # Prevent duplicate pending requests for the same book
     pending_same = any(
         r for r in borrow_records
         if r["username"] == user["username"] and r["book_id"] == book["id"] and r["status"] == "Pending Approval"
@@ -310,16 +260,10 @@ def request_borrow_book(user, book_id):
 
 
 def borrow_book(user, book_id):
-    """Alias for student/faculty request_borrow_book."""
     return request_borrow_book(user, book_id)
 
 
 def approve_borrow_request(record_id):
-    """
-    Librarian Workflow:
-    Approves a student or faculty borrow request, deducts stock copy, and initiates loan.
-    Sets 14 days for faculty, 7 days for students.
-    """
     try:
         rid = int(record_id)
     except (ValueError, TypeError):
@@ -351,10 +295,6 @@ def approve_borrow_request(record_id):
 
 
 def reject_borrow_request(record_id):
-    """
-    Librarian Workflow:
-    Rejects a student's borrow request.
-    """
     try:
         rid = int(record_id)
     except (ValueError, TypeError):
@@ -372,7 +312,6 @@ def reject_borrow_request(record_id):
 
 
 def issue_book_to_student(user_id, book_id):
-    """Librarian feature: Issue book directly to walk-in student or faculty immediately at the desk."""
     target_user = find_user_by_username(user_id)
     if not target_user:
         return False, f"User with ID '{user_id}' not found."
@@ -423,12 +362,10 @@ def issue_book_to_student(user_id, book_id):
 
 
 def reserve_book(user, book_id):
-    """Process a book reservation/waitlist directly from the catalog."""
     book = find_book_by_id(book_id)
     if not book:
         return False, "Book not found."
 
-    # Prevent duplicate active reservations by the same user for the same book
     active_existing = any(
         r for r in reservations
         if r["username"] == user["username"] and r["book_id"] == book["id"] and r["status"] in ("Waiting for Stock", "Ready for Pickup", "Pending")
@@ -459,10 +396,6 @@ def reserve_book(user, book_id):
 
 
 def fulfill_reservation(reservation_id):
-    """
-    Librarian Action: Fulfills a reservation by officially issuing the book to the reserving user.
-    Deducts 1 copy from shelf stock, records the borrow loan, and marks reservation as Fulfilled.
-    """
     try:
         resid = int(reservation_id)
     except (ValueError, TypeError):
@@ -500,7 +433,6 @@ def fulfill_reservation(reservation_id):
         role_label = "Faculty" if is_teacher else "Student"
         return False, f"Borrow limit reached: {target_user['name']} already has {len(active_loans)} active borrowed books (max {max_limit})."
 
-    # Deduct 1 physical copy
     book["copies"] -= 1
     borrow_d = date.today()
     due_d = borrow_d + timedelta(days=loan_days)
@@ -532,7 +464,6 @@ def fulfill_reservation(reservation_id):
 
 
 def cancel_reservation(reservation_id, username=None):
-    """Cancels an active reservation (by librarian or by student)."""
     try:
         resid = int(reservation_id)
     except (ValueError, TypeError):
@@ -553,10 +484,6 @@ def cancel_reservation(reservation_id, username=None):
 
 
 def return_borrowed_book(record_id):
-    """
-    Process book return with fully automated fine calculation based on system date.
-    Returns: (success, message, fine, is_overdue)
-    """
     record = next((r for r in borrow_records if r["record_id"] == int(record_id)), None)
     if not record:
         return False, "Record not found.", 0.0, False
@@ -570,7 +497,6 @@ def return_borrowed_book(record_id):
     record["return_date"] = date.today().strftime("%Y-%m-%d")
     record["fine"] = fine
 
-    # Restock copy back into library shelf
     book = find_book_by_id(record["book_id"])
     if book:
         book["copies"] += 1
@@ -585,7 +511,6 @@ def return_borrowed_book(record_id):
 
 
 def get_user_borrow_records(username):
-    """Retrieve borrow records for a specific user, with updated fine calculations."""
     user_recs = [r for r in borrow_records if r["username"] == username]
     for r in user_recs:
         if r["status"] == "Borrowed":
@@ -595,7 +520,6 @@ def get_user_borrow_records(username):
 
 
 def get_all_borrow_records():
-    """Retrieve all borrow records with live automated fines."""
     for r in borrow_records:
         if r["status"] == "Borrowed":
             _, live_fine, _ = calculate_overdue_fine(r)
@@ -604,27 +528,21 @@ def get_all_borrow_records():
 
 
 def get_all_reservations():
-    """Retrieve all book reservations, syncing available stock."""
     for b in books:
         if b.get("copies", 0) > 0:
             sync_book_reservations(b["id"])
     return reservations
 
 
-# ================= COURSE READING LISTS & RECOMMENDATIONS =================
-
 def get_all_recommendations():
-    """Retrieve all teacher recommended reading entries."""
     return recommendations
 
 
 def get_teacher_recommendations(username):
-    """Retrieve recommendations created by a specific teacher."""
     return [r for r in recommendations if r.get("teacher_username") == username]
 
 
 def recommend_book(user, book_id, course, notes):
-    """Teacher feature: Recommend a book for a syllabus / class reading list."""
     book = find_book_by_id(book_id)
     if not book:
         return False, "Book not found in catalog."
@@ -651,7 +569,6 @@ def recommend_book(user, book_id, course, notes):
 
 
 def remove_recommendation(rec_id, teacher_username=None):
-    """Remove a book from recommendations."""
     global recommendations
     rec = next((r for r in recommendations if r["id"] == int(rec_id)), None)
     if not rec:
@@ -662,10 +579,7 @@ def remove_recommendation(rec_id, teacher_username=None):
     return True, f"Recommendation for '{rec['book_title']}' removed."
 
 
-# ================= BOOK ACQUISITIONS (TEACHER PURCHASE REQUESTS) =================
-
 def request_book_acquisition(user, title, author, category, reason):
-    """Teacher feature: Request a new book purchase/acquisition for the library."""
     title = title.strip()
     author = author.strip()
     if not title or not author:
@@ -688,14 +602,12 @@ def request_book_acquisition(user, title, author, category, reason):
 
 
 def get_all_acquisitions(teacher_username=None):
-    """Retrieve book acquisition requests."""
     if teacher_username:
         return [a for a in acquisitions if a.get("teacher_username") == teacher_username]
     return acquisitions
 
 
 def approve_acquisition_request(acq_id, shelf="Shelf A-1", copies=3):
-    """Librarian feature: Approve acquisition and directly add book to catalog inventory."""
     try:
         aid = int(acq_id)
     except (ValueError, TypeError):
@@ -722,7 +634,6 @@ def approve_acquisition_request(acq_id, shelf="Shelf A-1", copies=3):
 
 
 def reject_acquisition_request(acq_id, reason="Budget / policy constraints"):
-    """Librarian feature: Decline an acquisition request."""
     try:
         aid = int(acq_id)
     except (ValueError, TypeError):
@@ -738,18 +649,7 @@ def reject_acquisition_request(acq_id, reason="Budget / policy constraints"):
     return True, f"Book request for '{acq['title']}' declined."
 
 
-# ================= LIBRARIAN ANALYTICS & DASHBOARD METRICS =================
-
 def get_analytics_metrics():
-    """
-    Calculate summary metrics for librarian dashboard metric cards:
-    - Total catalog titles
-    - Active borrowed books
-    - Pending borrow requests
-    - Overdue books
-    - Pending reservations
-    - Pending faculty acquisitions
-    """
     total_titles = len(books)
     active_borrowed = sum(1 for r in borrow_records if r["status"] == "Borrowed")
     pending_requests = sum(1 for r in borrow_records if r["status"] == "Pending Approval")
