@@ -46,7 +46,8 @@ reservations = []
 
 FINE_RATE = 10.0
 BORROW_DAYS = 7
-MAX_BORROW_LIMIT = 3
+MAX_BORROW_LIMIT = 5
+MAX_COPIES_PER_REQ = 4
 
 TEACHER_BORROW_DAYS = 14
 TEACHER_MAX_LIMIT = 5
@@ -212,13 +213,27 @@ def calculate_overdue_fine(record):
     return 0, 0.0, False
 
 
-def request_borrow_book(user, book_id):
+def request_borrow_book(user, book_id, copies=1):
     book = find_book_by_id(book_id)
     if not book:
         return False, "Book not found."
 
+    try:
+        qty = int(copies)
+    except (ValueError, TypeError):
+        qty = 1
+
+    if qty < 1:
+        return False, "Please request at least 1 copy."
+
+    if qty > MAX_COPIES_PER_REQ:
+        return False, f"Maximum allowed is {MAX_COPIES_PER_REQ} copies per book request."
+
     if book["copies"] <= 0:
         return False, "Out of Stock: Sorry, this book currently has 0 copies available on the shelf.\nYou can place a reservation hold instead."
+
+    if qty > book["copies"]:
+        return False, f"Only {book['copies']} copies available on the shelf for '{book['title']}'."
 
     pending_same = any(
         r for r in borrow_records
@@ -247,6 +262,7 @@ def request_borrow_book(user, book_id):
         "course": user.get("department") or user.get("course", "Student"),
         "book_id": book["id"],
         "book_title": book["title"],
+        "copies_borrowed": qty,
         "shelf": book.get("shelf", "Shelf A-1"),
         "request_date": date.today().strftime("%Y-%m-%d"),
         "borrow_date": None,
@@ -256,11 +272,12 @@ def request_borrow_book(user, book_id):
         "fine": 0.0
     }
     borrow_records.append(record)
-    return True, f"Borrow request for '{book['title']}' sent to Librarian!\nPlease wait for Librarian approval."
+    copies_txt = f"{qty} copy" if qty == 1 else f"{qty} copies"
+    return True, f"Borrow request for {copies_txt} of '{book['title']}' sent to Librarian!\nPlease wait for Librarian approval."
 
 
-def borrow_book(user, book_id):
-    return request_borrow_book(user, book_id)
+def borrow_book(user, book_id, copies=1):
+    return request_borrow_book(user, book_id, copies)
 
 
 def approve_borrow_request(record_id):
@@ -277,10 +294,11 @@ def approve_borrow_request(record_id):
         return False, f"Cannot approve: This request is already marked as '{record['status']}'."
 
     book = find_book_by_id(record["book_id"])
-    if not book or book["copies"] <= 0:
-        return False, f"Cannot approve: '{record['book_title']}' is currently out of stock (0 copies on shelf)."
+    qty = record.get("copies_borrowed", 1)
+    if not book or book["copies"] < qty:
+        return False, f"Cannot approve: '{record['book_title']}' has only {book['copies'] if book else 0} copies available on shelf (requested {qty})."
 
-    book["copies"] -= 1
+    book["copies"] -= qty
     borrow_d = date.today()
     is_teacher = record.get("role") == "teacher"
     loan_days = TEACHER_BORROW_DAYS if is_teacher else BORROW_DAYS
@@ -291,7 +309,8 @@ def approve_borrow_request(record_id):
     record["status"] = "Borrowed"
 
     term_note = f"{loan_days}-day faculty borrow period" if is_teacher else f"{loan_days}-day standard borrow period"
-    return True, f"Approved! '{record['book_title']}' has been officially issued to {record['name']} ({term_note}).\nReturn deadline is {due_d.strftime('%b %d, %Y')}."
+    copies_txt = f"{qty} copy" if qty == 1 else f"{qty} copies"
+    return True, f"Approved! '{record['book_title']}' ({copies_txt}) has been officially issued to {record['name']} ({term_note}).\nReturn deadline is {due_d.strftime('%b %d, %Y')}."
 
 
 def reject_borrow_request(record_id):
@@ -499,7 +518,8 @@ def return_borrowed_book(record_id):
 
     book = find_book_by_id(record["book_id"])
     if book:
-        book["copies"] += 1
+        qty = record.get("copies_borrowed", 1)
+        book["copies"] += qty
         sync_book_reservations(book["id"])
 
     if is_overdue:

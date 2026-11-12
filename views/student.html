@@ -131,7 +131,7 @@
           <div>
             <div style="font-weight: 700; color: #1e293b;">Personal Borrowing History & Approval Status</div>
             <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
-              Requests sent to the Librarian must be approved before you can pick up the book.
+              Requests must be approved before pickup. To return a book, please surrender the physical copy to the Librarian at the library counter.
             </div>
           </div>
           <div style="font-size: 0.85rem; color: #475569; background: #f1f5f9; padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
@@ -149,7 +149,7 @@
                   <th>Due Date</th>
                   <th>Status</th>
                   <th>Penalty Fine</th>
-                  <th>Action</th>
+                  <th>Return Instructions</th>
                 </tr>
               </thead>
               <tbody id="loans-tbody"></tbody>
@@ -185,6 +185,37 @@
         </div>
       </section>
     </main>
+
+    <!-- Modal: Borrow Book - Select Copies -->
+    <div id="modal-borrow-copies" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog" style="max-width: 440px;">
+        <div class="modal-header">
+          <div class="modal-title">Borrow Book Request</div>
+          <button class="modal-close" onclick="closeModal('modal-borrow-copies')">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+          <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a;" id="borrow-modal-title">--</div>
+          <div style="font-size: 0.82rem; color: #64748b; margin-top: 2px;" id="borrow-modal-meta">--</div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin: 14px 0;">
+            <span style="font-size: 0.88rem; color: #475569; font-weight: 500;">Available on shelf:</span>
+            <span id="borrow-modal-available" class="badge badge-stock" style="font-size: 0.85rem; font-weight: 700;">-- available</span>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="borrow-copies-input" style="font-weight: 600; color: #1e293b; font-size: 0.9rem;">Number of copies to borrow:</label>
+            <input type="number" id="borrow-copies-input" class="form-input" min="1" max="4" value="1" style="font-size: 1.05rem; padding: 8px 12px; margin-top: 4px;">
+            <div id="borrow-copies-hint" style="font-size: 0.78rem; color: #64748b; margin-top: 6px;">Maximum 4 copies allowed per request.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-borrow-copies')" style="padding: 6px 16px;">Cancel</button>
+          <button type="button" class="btn btn-primary" id="btn-submit-borrow-qty" onclick="submitBorrowQty()" style="padding: 6px 18px;">
+            Request Borrow
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div id="toast-container" class="toast-container"></div>
   </div>
@@ -263,10 +294,22 @@
     let currentUser = null;
     let selectedBookId = null;
     let filterRecommendedOnly = false;
+    let cachedBooks = [];
+    let pendingBorrowBookId = null;
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "flex";
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "none";
+    }
 
     const navMeta = {
       "section-catalog": { title: "Book Catalog", subtitle: "Search, explore available shelf copies, and request books from the librarian" },
-      "section-loans": { title: "My Borrowed Books & Requests", subtitle: "Monitor approval status, return due dates, and return items" },
+      "section-loans": { title: "My Borrowed Books & Requests", subtitle: "Monitor approval status, due dates, and circulation history" },
       "section-holds": { title: "My Book Reservations", subtitle: "Track the queue and status of your book reservations" }
     };
 
@@ -415,6 +458,7 @@
         if (filterRecommendedOnly) {
           books = books.filter((b) => b.recommendations && b.recommendations.length > 0);
         }
+        cachedBooks = books;
         tbody.innerHTML = "";
 
         if (books.length === 0) {
@@ -469,12 +513,64 @@
       }
     }
 
+    function borrowBook(bookId) {
+      if (!bookId) return;
+      pendingBorrowBookId = Number(bookId);
+      const b = cachedBooks.find((book) => book.id === pendingBorrowBookId);
+      if (b) {
+        document.getElementById("borrow-modal-title").textContent = b.title || "Book Request";
+        document.getElementById("borrow-modal-meta").textContent = `${b.author || "Unknown"} • ${b.shelf || "Main Shelf"}`;
+        
+        const avail = b.copies || 0;
+        const availEl = document.getElementById("borrow-modal-available");
+        if (availEl) {
+          availEl.textContent = `${avail} ${avail === 1 ? 'copy' : 'copies'} available`;
+          availEl.className = avail > 0 ? "badge badge-stock" : "badge badge-out";
+        }
+
+        const maxAllowed = Math.min(avail, 4);
+        const input = document.getElementById("borrow-copies-input");
+        if (input) {
+          input.value = "1";
+          input.min = "1";
+          input.max = String(Math.max(1, maxAllowed));
+        }
+
+        const hintEl = document.getElementById("borrow-copies-hint");
+        if (hintEl) {
+          hintEl.textContent = `Limit: Up to ${maxAllowed} ${maxAllowed === 1 ? 'copy' : 'copies'} per request (max 4).`;
+        }
+      }
+      openModal("modal-borrow-copies");
+    }
+
     let isBorrowing = false;
-    async function borrowBook(bookId) {
-      if (isBorrowing) return;
+    async function submitBorrowQty() {
+      if (isBorrowing || !pendingBorrowBookId) return;
+      const b = cachedBooks.find((book) => book.id === pendingBorrowBookId);
+      const avail = b ? (b.copies || 0) : 0;
+      const maxAllowed = Math.min(avail, 4);
+
+      const input = document.getElementById("borrow-copies-input");
+      const qty = parseInt(input ? input.value : 1, 10);
+
+      if (isNaN(qty) || qty < 1) {
+        showToast("Please enter at least 1 copy.", "error");
+        return;
+      }
+      if (qty > 4) {
+        showToast("Maximum 4 copies allowed per request.", "error");
+        return;
+      }
+      if (qty > avail) {
+        showToast(`Only ${avail} copies currently available on the shelf.`, "error");
+        return;
+      }
+
+      closeModal("modal-borrow-copies");
       isBorrowing = true;
       try {
-        const res = await callApi("borrow_book", bookId);
+        const res = await callApi("borrow_book", pendingBorrowBookId, qty);
         if (res && res.success) {
           showToast(res.message, "success");
           await loadCatalog(document.getElementById("search-input").value);
@@ -484,6 +580,7 @@
         }
       } finally {
         isBorrowing = false;
+        pendingBorrowBookId = null;
       }
     }
 
@@ -518,7 +615,7 @@
           actionContent = `<span style="font-size: 0.8rem; color: #d97706; font-weight: 600;">Awaiting Review</span>`;
         } else if (l.status === "Borrowed") {
           statusBadge = `<span class="badge badge-status-borrowed">Borrowed</span>`;
-          actionContent = `<button class="btn btn-teal" style="padding: 4px 10px; font-size: 0.78rem;" onclick="returnBook(${l.record_id})">Return Book</button>`;
+          actionContent = `<span class="badge" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.78rem;">Return at Library Desk</span>`;
         } else if (l.status === "Returned") {
           statusBadge = `<span class="badge badge-status-returned">Returned</span>`;
           actionContent = `<span style="font-size: 0.8rem; color: var(--text-muted);">Returned on ${l.return_date}</span>`;
@@ -531,8 +628,12 @@
           ? `<span style="color: #dc2626; font-weight: bold;">₱${l.fine.toFixed(2)}</span>` 
           : `<span style="color: #10b981;">₱0.00</span>`;
 
+        const copiesBadge = (l.copies_borrowed && l.copies_borrowed > 1)
+          ? `<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.72rem; margin-left: 6px;">${l.copies_borrowed} copies</span>`
+          : "";
+
         tr.innerHTML = `
-          <td style="font-weight: 600;">${l.book_title}</td>
+          <td style="font-weight: 600;">${l.book_title} ${copiesBadge}</td>
           <td>${requestDateText}</td>
           <td>${dueDateText}</td>
           <td>${statusBadge}</td>
@@ -542,24 +643,6 @@
         tbody.appendChild(tr);
       });
       await updateActiveLoansCount();
-    }
-
-    let isReturning = false;
-    async function returnBook(recordId) {
-      if (isReturning) return;
-      isReturning = true;
-      try {
-        const res = await callApi("return_book", recordId);
-        if (res && res.success) {
-          showToast(res.message, res.is_overdue ? "error" : "success");
-          await loadStudentLoans();
-          await updateActiveLoansCount();
-        } else {
-          showToast(res ? res.message : "Return failed", "error");
-        }
-      } finally {
-        isReturning = false;
-      }
     }
 
     async function loadStudentHolds() {
@@ -616,9 +699,11 @@
     }
 
     // Explicitly bind to global window scope
+    window.openModal = openModal;
+    window.closeModal = closeModal;
     window.borrowBook = borrowBook;
+    window.submitBorrowQty = submitBorrowQty;
     window.reserveBook = reserveBook;
-    window.returnBook = returnBook;
     window.cancelMyReservation = cancelMyReservation;
   </script>
 </body>

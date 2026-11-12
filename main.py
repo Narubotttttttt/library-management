@@ -53,10 +53,14 @@ class LibraryApi:
             print(f"[LibraryApi.get_books] error: {e}")
             return []
 
-    def borrow_book(self, book_id):
+    def borrow_book(self, book_id, copies=1):
         if not self.current_user:
             return {"success": False, "message": "Please log in first."}
-        success, msg = backend.borrow_book(self.current_user, int(book_id))
+        try:
+            qty = int(copies)
+        except (ValueError, TypeError):
+            qty = 1
+        success, msg = backend.borrow_book(self.current_user, int(book_id), qty)
         return {"success": success, "message": msg}
 
     def reserve_book(self, book_id):
@@ -75,6 +79,11 @@ class LibraryApi:
             return []
 
     def return_book(self, record_id):
+        if not self.current_user or self.current_user.get("role") != "librarian":
+            return {
+                "success": False,
+                "message": "Only library staff/librarian can process and verify book returns at the circulation desk."
+            }
         success, msg, fine, is_overdue = backend.return_borrowed_book(int(record_id))
         return {
             "success": success, 

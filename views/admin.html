@@ -399,6 +399,7 @@
                   <th>Due Date</th>
                   <th>Status</th>
                   <th>Penalty Fine</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody id="loans-tbody"></tbody>
@@ -493,6 +494,25 @@
     </main>
 
     <!-- MODALS -->
+
+    <!-- Modal: Confirm Reject Borrow Request -->
+    <div id="modal-confirm-reject" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog" style="max-width: 420px;">
+        <div class="modal-header">
+          <div class="modal-title">Confirmation</div>
+          <button class="modal-close" onclick="closeModal('modal-confirm-reject')">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 24px; font-size: 1rem; color: #1e293b;">
+          Are you sure you want to reject this request?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-confirm-reject')" style="padding: 6px 16px;">No</button>
+          <button type="button" class="btn btn-danger" id="btn-confirm-reject-submit" onclick="executeRejectBorrowRequest()" style="background: #dc2626; color: #fff; border: 1px solid #dc2626; padding: 6px 18px;">
+            Yes
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Modal: Approve Acquisition and Add to Catalog -->
     <div id="modal-approve-acq" class="modal-backdrop" style="display: none;">
@@ -924,6 +944,7 @@
       // Load pending requests table on dashboard overview
       const allRecords = await callApi("get_all_borrow_records");
       const pendingReqs = (allRecords || []).filter((r) => r.status === "Pending Approval");
+      cachedPendingRequests = pendingReqs;
       const books = await callApi("get_books");
 
       const tbody = document.getElementById("dashboard-requests-tbody");
@@ -947,6 +968,10 @@
             ? `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">📍 ${book.shelf}</div>`
             : "";
 
+          const copiesBadge = (r.copies_borrowed && r.copies_borrowed > 1)
+            ? `<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.68rem; margin-left: 4px;">${r.copies_borrowed} copies</span>`
+            : "";
+
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td style="font-weight: bold; color: var(--text-muted); font-family: monospace;">#${recId}</td>
@@ -958,7 +983,7 @@
               </div>
             </td>
             <td>
-              <div style="font-weight: 600; color: #1e293b;">${r.book_title}</div>
+              <div style="font-weight: 600; color: #1e293b;">${r.book_title} ${copiesBadge}</div>
               ${shelfBadge}
             </td>
             <td><span class="badge badge-date" style="font-size: 0.72rem;">📅 ${r.request_date || "Today"}</span></td>
@@ -1022,6 +1047,7 @@
     async function loadBorrowRequests() {
       const [allRecords, books] = await Promise.all([callApi("get_all_borrow_records"), callApi("get_books")]);
       const pendingReqs = (allRecords || []).filter((r) => r.status === "Pending Approval");
+      cachedPendingRequests = pendingReqs;
       const tbody = document.getElementById("requests-full-tbody");
       tbody.innerHTML = "";
 
@@ -1039,13 +1065,17 @@
           ? `<span class="badge badge-faculty" style="font-size: 0.7rem; margin-left: 6px;">Faculty (14 Days)</span>` 
           : `<span class="badge badge-student" style="font-size: 0.7rem; margin-left: 6px;">Student (7 Days)</span>`;
 
+        const copiesReq = (r.copies_borrowed && r.copies_borrowed > 1)
+          ? `<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.72rem; margin-left: 6px;">${r.copies_borrowed} copies</span>`
+          : "";
+
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td style="font-weight: bold; color: var(--text-muted);">#${recId}</td>
           <td style="font-family: monospace; font-weight: bold;">${r.username}</td>
           <td><span style="font-weight: 600;">${r.name}</span> ${roleBadge}</td>
           <td>${r.course || (isTeacher ? 'Faculty' : 'Student')}</td>
-          <td style="font-weight: 600;">${r.book_title}</td>
+          <td style="font-weight: 600;">${r.book_title} ${copiesReq}</td>
           <td>${r.request_date || 'Today'}</td>
           <td><span class="badge ${copies > 0 ? 'badge-stock' : 'badge-out'}">${copies} copies available</span></td>
           <td style="text-align: right;">
@@ -1063,7 +1093,9 @@
       });
     }
 
+    let cachedPendingRequests = [];
     let isProcessingRequest = false;
+    let pendingRejectRecordId = null;
 
     async function approveBorrowRequest(recordId) {
       if (isProcessingRequest) return;
@@ -1088,14 +1120,24 @@
     }
 
     async function rejectBorrowRequest(recordId) {
-      if (isProcessingRequest) return;
       if (!recordId) {
         showToast("Invalid request ID.", "error");
         return;
       }
+      pendingRejectRecordId = Number(recordId);
+      openModal("modal-confirm-reject");
+    }
+
+    async function executeRejectBorrowRequest() {
+      if (isProcessingRequest) return;
+      if (!pendingRejectRecordId) {
+        closeModal("modal-confirm-reject");
+        return;
+      }
+      closeModal("modal-confirm-reject");
       isProcessingRequest = true;
       try {
-        const res = await callApi("reject_borrow_request", Number(recordId));
+        const res = await callApi("reject_borrow_request", pendingRejectRecordId);
         if (res && res.success) {
           showToast(res.message, "info");
           await refreshDashboard();
@@ -1106,12 +1148,14 @@
         }
       } finally {
         isProcessingRequest = false;
+        pendingRejectRecordId = null;
       }
     }
 
     // Explicitly bind to global window scope
     window.approveBorrowRequest = approveBorrowRequest;
     window.rejectBorrowRequest = rejectBorrowRequest;
+    window.executeRejectBorrowRequest = executeRejectBorrowRequest;
 
     async function loadInventory(query = "") {
       const tbody = document.getElementById("inventory-tbody");
@@ -1162,7 +1206,7 @@
       tbody.innerHTML = "";
 
       if (!activeOrPast || activeOrPast.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 20px;">No borrowed book records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 20px;">No borrowed book records found.</td></tr>`;
         return;
       }
 
@@ -1177,15 +1221,24 @@
           ? `<span style="color: #dc2626; font-weight: bold;">₱${r.fine.toFixed(2)}</span>` 
           : `<span style="color: #10b981;">₱0.00</span>`;
 
+        const actionCol = (r.status === "Borrowed")
+          ? `<button class="btn btn-teal" style="padding: 4px 10px; font-size: 0.78rem;" onclick="adminProcessReturn(${r.record_id})">Accept Return</button>`
+          : `<span style="font-size: 0.8rem; color: var(--text-muted);">Returned (${r.return_date || 'N/A'})</span>`;
+
+        const circCopies = (r.copies_borrowed && r.copies_borrowed > 1)
+          ? `<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.72rem; margin-left: 6px;">${r.copies_borrowed} copies</span>`
+          : "";
+
         tr.innerHTML = `
           <td style="font-weight: bold; color: var(--text-muted);">#${r.record_id}</td>
           <td style="font-family: monospace;">${r.username}</td>
           <td style="font-weight: 600;">${r.name}</td>
-          <td>${r.book_title}</td>
+          <td>${r.book_title} ${circCopies}</td>
           <td>${r.borrow_date || 'N/A'}</td>
           <td>${r.due_date || 'N/A'}</td>
           <td>${statusBadge}</td>
           <td>${fineDisplay}</td>
+          <td>${actionCol}</td>
         `;
         tbody.appendChild(tr);
       });
