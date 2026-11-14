@@ -239,7 +239,7 @@
         <div class="table-card" style="margin-top: 4px;">
           <div style="padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
             <div style="font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-              <span>Student Borrow Requests Awaiting Approval</span>
+              <span>Borrow Requests Awaiting Approval</span>
               <span class="badge" style="background: #fef3c7; color: #b45309;" id="dashboard-requests-count">0 pending</span>
             </div>
             <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" onclick="document.querySelector('[data-target=section-requests]').click();">
@@ -251,7 +251,7 @@
               <thead>
                 <tr>
                   <th>Request #</th>
-                  <th>Student / Requester</th>
+                  <th>Borrower / Requester</th>
                   <th>Book Title</th>
                   <th>Request Date</th>
                   <th>Stock Available</th>
@@ -284,7 +284,7 @@
               <thead>
                 <tr>
                   <th>Record #</th>
-                  <th>Student / User</th>
+                  <th>Borrower / Member</th>
                   <th>Book Title</th>
                   <th>Borrow Date</th>
                   <th>Return Date</th>
@@ -301,7 +301,7 @@
       <section id="section-requests" class="page-section" style="display: none;">
         <div class="toolbar">
           <div>
-            <div style="font-weight: 700; color: #1e293b;">Review Student Borrow Requests</div>
+            <div style="font-weight: 700; color: #1e293b;">Review Borrow Requests</div>
             <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
               Approve requests to officially issue the book and deduct physical shelf copies.
             </div>
@@ -314,9 +314,9 @@
               <thead>
                 <tr>
                   <th>Request #</th>
-                  <th>Student ID</th>
-                  <th>Student Name</th>
-                  <th>Course / Level</th>
+                  <th>Borrower ID</th>
+                  <th>Borrower Name</th>
+                  <th>Course / Department</th>
                   <th>Book Title</th>
                   <th>Request Date</th>
                   <th>Available Stock</th>
@@ -392,7 +392,7 @@
               <thead>
                 <tr>
                   <th>Record #</th>
-                  <th>Student ID</th>
+                  <th>Borrower ID</th>
                   <th>Borrower Name</th>
                   <th>Book Title</th>
                   <th>Borrow Date</th>
@@ -444,7 +444,7 @@
               <thead>
                 <tr>
                   <th>Reservation #</th>
-                  <th>Student / Borrower</th>
+                  <th>Borrower / Member</th>
                   <th>Book Title</th>
                   <th>Stock on Shelf</th>
                   <th>Requested Date</th>
@@ -745,10 +745,10 @@
       container.appendChild(toast);
       setTimeout(() => {
         toast.style.opacity = "0";
-        toast.style.transform = "translateX(50px)";
-        toast.style.transition = "all 0.3s ease";
-        setTimeout(() => toast.remove(), 300);
-      }, 4000);
+        toast.style.transform = "translateY(-20px)";
+        toast.style.transition = "all 0.25s ease";
+        setTimeout(() => toast.remove(), 250);
+      }, 3500);
     }
 
     function openModal(id) {
@@ -970,7 +970,7 @@
       tbody.innerHTML = "";
 
       if (pendingReqs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 26px;">No pending borrow requests right now. When a student submits a request, it will appear here immediately.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 26px;">No pending borrow requests right now. When a borrower submits a request, it will appear here immediately.</td></tr>`;
       } else {
         pendingReqs.slice(0, 6).forEach((r) => {
           const book = (books || []).find((b) => b.id === r.book_id);
@@ -1036,7 +1036,7 @@
       if (retTbody) {
         retTbody.innerHTML = "";
         if (returnedReqs.length === 0) {
-          retTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 22px;">No books returned yet. Books returned by students will be logged here.</td></tr>`;
+          retTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 22px;">No books returned yet. Books returned by borrowers will be logged here.</td></tr>`;
         } else {
           returnedReqs.slice(0, 6).forEach((r) => {
             const isTeacher = r.role === "teacher";
@@ -1071,7 +1071,7 @@
       tbody.innerHTML = "";
 
       if (pendingReqs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 28px;">No pending student borrow requests to review.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 28px;">No pending borrow requests to review.</td></tr>`;
         return;
       }
 

@@ -271,8 +271,8 @@
 
         <div class="form-group" style="margin-bottom: 0;">
           <label for="borrow-copies-input" style="font-weight: 600; color: #1e293b; font-size: 0.9rem;">Number of copies to borrow:</label>
-          <input type="number" id="borrow-copies-input" class="form-input" min="1" max="5" value="1" style="font-size: 1.05rem; padding: 8px 12px; margin-top: 4px;">
-          <div id="borrow-copies-hint" style="font-size: 0.78rem; color: #64748b; margin-top: 6px;">Maximum 5 copies allowed per request.</div>
+          <input type="number" id="borrow-copies-input" class="form-input" min="1" max="20" value="1" style="font-size: 1.05rem; padding: 8px 12px; margin-top: 4px;">
+          <div id="borrow-copies-hint" style="font-size: 0.78rem; color: #64748b; margin-top: 6px;">Maximum 20 copies allowed per request.</div>
         </div>
       </div>
       <div class="modal-footer">
@@ -435,10 +435,10 @@
       container.appendChild(toast);
       setTimeout(() => {
         toast.style.opacity = "0";
-        toast.style.transform = "translateX(50px)";
-        toast.style.transition = "all 0.3s ease";
-        setTimeout(() => toast.remove(), 300);
-      }, 4000);
+        toast.style.transform = "translateY(-20px)";
+        toast.style.transition = "all 0.25s ease";
+        setTimeout(() => toast.remove(), 250);
+      }, 3500);
     }
 
     function openModal(id) {
@@ -676,7 +676,7 @@
           availEl.className = avail > 0 ? "badge badge-stock" : "badge badge-out";
         }
 
-        const maxAllowed = Math.min(avail, 5);
+        const maxAllowed = Math.min(avail, 20);
         const input = document.getElementById("borrow-copies-input");
         if (input) {
           input.value = "1";
@@ -686,7 +686,7 @@
 
         const hintEl = document.getElementById("borrow-copies-hint");
         if (hintEl) {
-          hintEl.textContent = `Limit: Up to ${maxAllowed} ${maxAllowed === 1 ? 'copy' : 'copies'} per request (max 5).`;
+          hintEl.textContent = `Limit: Up to ${maxAllowed} ${maxAllowed === 1 ? 'copy' : 'copies'} per request (max 20).`;
         }
       }
       openModal("modal-borrow-copies");
@@ -696,7 +696,7 @@
       if (isProcessing || !pendingBorrowBookId) return;
       const b = cachedBooks.find((book) => book.id === pendingBorrowBookId);
       const avail = b ? (b.copies || 0) : 0;
-      const maxAllowed = Math.min(avail, 5);
+      const maxAllowed = Math.min(avail, 20);
 
       const input = document.getElementById("borrow-copies-input");
       const qty = parseInt(input ? input.value : 1, 10);
@@ -705,8 +705,8 @@
         showToast("Please enter at least 1 copy.", "error");
         return;
       }
-      if (qty > 5) {
-        showToast("Maximum 5 copies allowed per request.", "error");
+      if (qty > 20) {
+        showToast("Maximum 20 copies allowed per request.", "error");
         return;
       }
       if (qty > avail) {

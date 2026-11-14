@@ -52,6 +52,7 @@ MAX_COPIES_PER_REQ = 5
 TEACHER_BORROW_DAYS = 14
 TEACHER_MAX_LIMIT = 5
 TEACHER_FINE_RATE = 0.0
+TEACHER_MAX_COPIES_PER_REQ = 20
 
 recommendations = []
 acquisitions = []
@@ -94,7 +95,7 @@ def register_user(name, username, password, email, course, contact, role="studen
         "contact": contact
     })
     role_label = "Faculty Member" if role == "teacher" else "Student"
-    return True, f"Registration successful!\nYou can now log in as {role_label} using ID '{username}'."
+    return True, "Registration successful!"
 
 
 def register_student(name, student_id, password, email, course, contact, role="student"):
@@ -121,7 +122,7 @@ def reset_password(username, new_password):
     if not new_pw:
         return False, "New password cannot be empty."
     u["password"] = new_pw
-    return True, f"Password successfully reset for '{u['name']}'! You can now log in."
+    return True, "Password reset successfully!"
 
 
 def _enrich_books_with_meta(book_list):
@@ -178,7 +179,7 @@ def restock_book(book_id, count):
         return False, "Book not found."
     book["copies"] += count
     sync_book_reservations(book["id"])
-    return True, f"Successfully updated copies to {book['copies']}!"
+    return True, f"Stock updated to {book['copies']} copies!"
 
 
 def add_book(title, author, category, shelf, copies):
@@ -196,7 +197,7 @@ def add_book(title, author, category, shelf, copies):
         "copies": max(0, copies)
     }
     books.append(new_book)
-    return True, f"'{title}' added successfully to inventory ({new_book['shelf']})!"
+    return True, f"'{title}' added to inventory!"
 
 
 def delete_book(book_id):
@@ -237,8 +238,10 @@ def request_borrow_book(user, book_id, copies=1):
     if qty < 1:
         return False, "Please request at least 1 copy."
 
-    if qty > MAX_COPIES_PER_REQ:
-        return False, f"Maximum allowed is {MAX_COPIES_PER_REQ} copies per book request."
+    is_teacher = user.get("role") == "teacher"
+    max_copies = TEACHER_MAX_COPIES_PER_REQ if is_teacher else MAX_COPIES_PER_REQ
+    if qty > max_copies:
+        return False, f"Maximum allowed is {max_copies} copies per book request."
 
     if book["copies"] <= 0:
         return False, "Out of Stock: Sorry, this book currently has 0 copies available on the shelf.\nYou can place a reservation hold instead."
@@ -253,7 +256,6 @@ def request_borrow_book(user, book_id, copies=1):
     if pending_same:
         return False, f"You already submitted a request for '{book['title']}'.\nPlease wait for the Librarian to review it."
 
-    is_teacher = user.get("role") == "teacher"
     max_limit = TEACHER_MAX_LIMIT if is_teacher else MAX_BORROW_LIMIT
 
     active_or_pending = [
@@ -284,7 +286,7 @@ def request_borrow_book(user, book_id, copies=1):
     }
     borrow_records.append(record)
     copies_txt = f"{qty} copy" if qty == 1 else f"{qty} copies"
-    return True, f"Borrow request for {copies_txt} of '{book['title']}' sent to Librarian!\nPlease wait for Librarian approval."
+    return True, f"Borrow request submitted ({copies_txt})!"
 
 
 def borrow_book(user, book_id, copies=1):
@@ -321,7 +323,7 @@ def approve_borrow_request(record_id):
 
     term_note = f"{loan_days}-day faculty borrow period" if is_teacher else f"{loan_days}-day standard borrow period"
     copies_txt = f"{qty} copy" if qty == 1 else f"{qty} copies"
-    return True, f"Approved! '{record['book_title']}' ({copies_txt}) has been officially issued to {record['name']} ({term_note}).\nReturn deadline is {due_d.strftime('%b %d, %Y')}."
+    return True, f"Request approved for {record['name']}!"
 
 
 def reject_borrow_request(record_id):
@@ -338,7 +340,7 @@ def reject_borrow_request(record_id):
         return False, f"Cannot reject: This request is already marked as '{record['status']}'."
 
     record["status"] = "Rejected"
-    return True, f"Borrow request #{record_id} for '{record['book_title']}' has been rejected."
+    return True, "Borrow request rejected."
 
 
 def issue_book_to_student(user_id, book_id):
@@ -388,7 +390,7 @@ def issue_book_to_student(user_id, book_id):
     }
     borrow_records.append(record)
     term_note = f"{loan_days}-day faculty borrow period" if is_teacher else f"{loan_days}-day standard borrow period"
-    return True, f"'{book['title']}' successfully issued to {target_user['name']} ({term_note}).\nDue date: {due_d.strftime('%b %d, %Y')}."
+    return True, f"Book issued to {target_user['name']}!"
 
 
 def reserve_book(user, book_id):
@@ -419,9 +421,9 @@ def reserve_book(user, book_id):
     }
     reservations.append(res)
     if init_status == "Ready for Pickup":
-        msg = f"Reservation placed! '{book['title']}' has copies available and is ready for pickup at the library desk."
+        msg = f"Reservation placed for '{book['title']}'! Ready for pickup."
     else:
-        msg = f"Waitlist reservation placed for '{book['title']}'! You will be notified when copies are restocked or returned."
+        msg = f"Waitlist reservation placed for '{book['title']}'!"
     return True, msg
 
 
@@ -490,7 +492,7 @@ def fulfill_reservation(reservation_id):
     res["fulfilled_date"] = borrow_d.strftime("%Y-%m-%d")
 
     term_note = f"{loan_days}-day faculty borrow period" if is_teacher else f"{loan_days}-day standard borrow period"
-    return True, f"Reservation fulfilled! '{book['title']}' officially issued to {target_user['name']} ({term_note}). Return deadline: {due_d.strftime('%b %d, %Y')}."
+    return True, f"Reservation fulfilled for {target_user['name']}!"
 
 
 def cancel_reservation(reservation_id, username=None):
@@ -510,7 +512,7 @@ def cancel_reservation(reservation_id, username=None):
         return False, f"Reservation is already marked as '{res.get('status')}'."
 
     res["status"] = "Cancelled"
-    return True, f"Reservation #{reservation_id} for '{res['book_title']}' has been cancelled."
+    return True, "Reservation cancelled."
 
 
 def return_borrowed_book(record_id):
@@ -534,9 +536,9 @@ def return_borrowed_book(record_id):
         sync_book_reservations(book["id"])
 
     if is_overdue:
-        msg = f"Book returned overdue by {overdue_days} day(s).\nOverdue penalty fee: {overdue_days} days x P{FINE_RATE:.2f} = P{fine:.2f}"
+        msg = f"Book returned overdue ({overdue_days} days). Fine: P{fine:.2f}"
     else:
-        msg = "Book returned on time! No overdue penalty."
+        msg = "Book returned on time!"
 
     return True, msg, fine, is_overdue
 
@@ -629,7 +631,7 @@ def request_book_acquisition(user, title, author, category, reason):
         "status": "Pending Review"
     }
     acquisitions.append(acq)
-    return True, f"Book purchase request for '{title}' submitted to Librarian for review!"
+    return True, "Book purchase request submitted!"
 
 
 def get_all_acquisitions(teacher_username=None):
@@ -661,7 +663,7 @@ def approve_acquisition_request(acq_id, shelf="Shelf A-1", copies=3):
     }
     books.append(new_book)
     acq["status"] = "Approved & Added"
-    return True, f"Request approved! '{acq['title']}' officially added to catalog inventory with {new_book['copies']} copies on {new_book['shelf']}."
+    return True, f"'{acq['title']}' added to catalog!"
 
 
 def reject_acquisition_request(acq_id, reason="Budget / policy constraints"):
@@ -677,7 +679,7 @@ def reject_acquisition_request(acq_id, reason="Budget / policy constraints"):
         return False, f"Cannot reject: Request is already marked as '{acq['status']}'."
 
     acq["status"] = "Declined"
-    return True, f"Book request for '{acq['title']}' declined."
+    return True, "Book request declined."
 
 
 def get_analytics_metrics():
