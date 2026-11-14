@@ -47,7 +47,7 @@ reservations = []
 FINE_RATE = 10.0
 BORROW_DAYS = 7
 MAX_BORROW_LIMIT = 5
-MAX_COPIES_PER_REQ = 4
+MAX_COPIES_PER_REQ = 5
 
 TEACHER_BORROW_DAYS = 14
 TEACHER_MAX_LIMIT = 5
@@ -111,6 +111,17 @@ def get_all_faculty():
 
 def find_user_by_username(username):
     return next((u for u in users if u["username"].lower() == username.strip().lower()), None)
+
+
+def reset_password(username, new_password):
+    u = find_user_by_username(username)
+    if not u:
+        return False, f"Account with ID/Username '{username}' not found."
+    new_pw = new_password.strip()
+    if not new_pw:
+        return False, "New password cannot be empty."
+    u["password"] = new_pw
+    return True, f"Password successfully reset for '{u['name']}'! You can now log in."
 
 
 def _enrich_books_with_meta(book_list):

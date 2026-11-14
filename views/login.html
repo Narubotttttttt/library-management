@@ -43,6 +43,10 @@
             Register
           </button>
         </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 14px;">
+          <a href="javascript:void(0)" id="btn-show-forgot" style="font-size: 0.82rem; color: var(--primary, #2563eb); text-decoration: none; font-weight: 600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Forgot Password?</a>
+        </div>
       </form>
     </div>
   </div>
@@ -95,6 +99,41 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="closeModal('modal-register')">Cancel</button>
           <button type="submit" class="btn btn-primary">Complete Registration</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div id="modal-forgot" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header">
+        <div class="modal-title">Reset Password</div>
+        <button class="modal-close" onclick="closeModal('modal-forgot')">&times;</button>
+      </div>
+      <form id="form-forgot">
+        <div class="modal-body">
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
+            Enter your Student ID / Username to set a new password.
+          </p>
+          <div class="form-group">
+            <label for="forgot-username">Student ID / Username *</label>
+            <input type="text" id="forgot-username" class="form-input" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="forgot-new-pass">New Password *</label>
+              <input type="password" id="forgot-new-pass" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label for="forgot-confirm-pass">Confirm Password *</label>
+              <input type="password" id="forgot-confirm-pass" class="form-input" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-forgot')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Reset Password</button>
         </div>
       </form>
     </div>
@@ -194,6 +233,47 @@
       document.getElementById("btn-show-register").addEventListener("click", () => {
         openModal("modal-register");
       });
+
+      const btnShowForgot = document.getElementById("btn-show-forgot");
+      if (btnShowForgot) {
+        btnShowForgot.addEventListener("click", () => {
+          const currentUsername = document.getElementById("login-username").value.trim();
+          if (currentUsername) {
+            document.getElementById("forgot-username").value = currentUsername;
+          }
+          openModal("modal-forgot");
+        });
+      }
+
+      const formForgot = document.getElementById("form-forgot");
+      if (formForgot) {
+        formForgot.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const username = document.getElementById("forgot-username").value.trim();
+          const newPass = document.getElementById("forgot-new-pass").value.trim();
+          const confirmPass = document.getElementById("forgot-confirm-pass").value.trim();
+
+          if (!username || !newPass) {
+            showToast("Please fill in all required fields.", "error");
+            return;
+          }
+
+          if (newPass !== confirmPass) {
+            showToast("Passwords do not match. Please verify your new password.", "error");
+            return;
+          }
+
+          const res = await callApi("reset_password", username, newPass);
+          if (res && res.success) {
+            closeModal("modal-forgot");
+            formForgot.reset();
+            quickFill(username, newPass);
+            showToast(res.message, "success");
+          } else {
+            showToast(res ? res.message : "Password reset failed.", "error");
+          }
+        });
+      }
 
       document.getElementById("login-form").addEventListener("submit", async (e) => {
         e.preventDefault();

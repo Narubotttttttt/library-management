@@ -495,6 +495,25 @@
 
     <!-- MODALS -->
 
+    <!-- Modal: Confirm Accept Borrow Request -->
+    <div id="modal-confirm-accept" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog" style="max-width: 420px;">
+        <div class="modal-header">
+          <div class="modal-title">Confirmation</div>
+          <button class="modal-close" onclick="closeModal('modal-confirm-accept')">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 24px; font-size: 1rem; color: #1e293b;">
+          Are you sure you want to accept this request?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-confirm-accept')" style="padding: 6px 16px;">No</button>
+          <button type="button" class="btn btn-primary" id="btn-confirm-accept-submit" onclick="executeApproveBorrowRequest()" style="background: #16a34a; color: #fff; border: 1px solid #16a34a; padding: 6px 18px;">
+            Yes
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal: Confirm Reject Borrow Request -->
     <div id="modal-confirm-reject" class="modal-backdrop" style="display: none;">
       <div class="modal-dialog" style="max-width: 420px;">
@@ -1095,17 +1114,28 @@
 
     let cachedPendingRequests = [];
     let isProcessingRequest = false;
+    let pendingApproveRecordId = null;
     let pendingRejectRecordId = null;
 
     async function approveBorrowRequest(recordId) {
-      if (isProcessingRequest) return;
       if (!recordId) {
         showToast("Invalid request ID.", "error");
         return;
       }
+      pendingApproveRecordId = Number(recordId);
+      openModal("modal-confirm-accept");
+    }
+
+    async function executeApproveBorrowRequest() {
+      if (isProcessingRequest) return;
+      if (!pendingApproveRecordId) {
+        closeModal("modal-confirm-accept");
+        return;
+      }
+      closeModal("modal-confirm-accept");
       isProcessingRequest = true;
       try {
-        const res = await callApi("approve_borrow_request", Number(recordId));
+        const res = await callApi("approve_borrow_request", pendingApproveRecordId);
         if (res && res.success) {
           showToast(res.message, "success");
           await refreshDashboard();
@@ -1116,6 +1146,7 @@
         }
       } finally {
         isProcessingRequest = false;
+        pendingApproveRecordId = null;
       }
     }
 
@@ -1154,6 +1185,7 @@
 
     // Explicitly bind to global window scope
     window.approveBorrowRequest = approveBorrowRequest;
+    window.executeApproveBorrowRequest = executeApproveBorrowRequest;
     window.rejectBorrowRequest = rejectBorrowRequest;
     window.executeRejectBorrowRequest = executeRejectBorrowRequest;
 

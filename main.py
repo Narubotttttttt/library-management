@@ -31,6 +31,10 @@ class LibraryApi:
         success, msg = backend.register_user(name, student_id, password, email, course, contact, role)
         return {"success": success, "message": msg}
 
+    def reset_password(self, username, new_password):
+        success, msg = backend.reset_password(username, new_password)
+        return {"success": success, "message": msg}
+
     def logout(self):
         self.current_user = None
         return {"success": True}
